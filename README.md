@@ -5,6 +5,8 @@ An algorithm for aesthetically displaying appointments/events on a calendar, cur
 I wrote this for work (back around 3/16) because we needed a way to display a user's schedule for the day/week/whatever. I thought about the problem for a while and decided to approach it from what I viewed as the most aesthetically pleasing method to tile a calendar with a person's appointments/events/what-have-you.
 
 # How? (Full length paper on the way along with demo code, TL;DR below)
+Full disclosure, this is the first README I've ever written on GitHUb and I thought the markup was Wiki markup so that's why everything looks terrible :(
+
 The algorithm works by accepting an array of appointments (<math>A</math>) where each appointment (<math>a</math>) has a start value (<math>s_a</math>) and an end value (<math>e_a</math>). In principal <math>s_a</math> can be any real valued number, however in practice
 :<math>0 \le s_a le 24</math>
 will be a typical use case. In principal <math>e_a</math>, can be any real valued number greater than <math>s_a</math> however in practice
