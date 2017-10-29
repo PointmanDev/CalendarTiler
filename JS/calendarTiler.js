@@ -193,30 +193,49 @@
             this.expandTFront();
         }
 
-        calculateXs() {
+        findNextTFront(index) {
             let i,
-                last;
-            
-            for (i = 1; i < this.collisions.dx.length; ++i) {
-                if (this.collisions.tBack[i].length > 0) {
-                    last = this.collisions.tBack[i][this.collisions.tBack[i].length - 1];
-                    this.collisions.x[i] = this.collisions.x[last] + this.collisions.dx[last];
+                tBack = [],
+                maxFront = -1,
+                maxIndex = index;
+                
+            for (i = 0; i < this.collisions.back[index].length; ++i) {
+                if (this.getFirstIndexOf(this.collisions.back[index][i], this.collisions.tBack[index]) === -1) {
+                    tBack.push(this.collisions.back[index][i]);
                 }
             }
+                
+            for (i = 0; i < tBack.length; ++i) {
+                if (this.collisions.tFront[tBack[i]].length > maxFront) {
+                    maxFront = this.collisions.tFront[tBack[i]].length;
+                    maxIndex = tBack[i];
+                }
+            }
+                
+            return maxIndex;
         }
 
-        findLongestChainThroughNode(index) {
+        expandTFront() {
             let i,
-                chain = this.collisions.tBack[index].concat([index]).concat(this.collisions.tFront[index]);
-                
-            for (i = index; i < this.collisions.front[index].length; ++i) {
-                if ((this.getFirstIndexOf(index, this.collisions.tBack[i]) > -1 || this.getFirstIndexOf(index, this.collisions.tFront[i]) > -1)
-                        && this.collisions.tBack[i].length + this.collisions.tFront[i].length + 1 > chain.length) {
-                    chain = this.collisions.tBack[i].concat([i]).concat(this.collisions.tFront[i]);
+                next;
+				
+            for (i = 0; i < this.collisions.tFront.length; ++i) {
+                if (this.collisions.tFront[i].length > 0) {
+                    next = this.collisions.tFront[i].length > 0 ? this.collisions.tFront[this.collisions.tFront[i][0]][0] : null;
+                    
+                    while (next) {
+                        this.collisions.tFront[i].push(next);
+                        
+                        if (this.collisions.tFront[next].length > 0) {
+                            next = this.collisions.tFront[next][0];
+                        } else {
+                            next = null;
+                        }
+                    }
                 }
             }
-                
-            return chain;
+            
+            this.calculateDxs();
         }
 
         calculateDxs() {
@@ -253,49 +272,30 @@
             this.calculateXs();
         }
 
-        expandTFront() {
+        findLongestChainThroughNode(index) {
             let i,
-                next;
-				
-            for (i = 0; i < this.collisions.tFront.length; ++i) {
-                if (this.collisions.tFront[i].length > 0) {
-                    next = this.collisions.tFront[i].length > 0 ? this.collisions.tFront[this.collisions.tFront[i][0]][0] : null;
-                    
-                    while (next) {
-                        this.collisions.tFront[i].push(next);
-                        
-                        if (this.collisions.tFront[next].length > 0) {
-                            next = this.collisions.tFront[next][0];
-                        } else {
-                            next = null;
-                        }
-                    }
+                chain = this.collisions.tBack[index].concat([index]).concat(this.collisions.tFront[index]);
+                
+            for (i = index; i < this.collisions.front[index].length; ++i) {
+                if ((this.getFirstIndexOf(index, this.collisions.tBack[i]) > -1 || this.getFirstIndexOf(index, this.collisions.tFront[i]) > -1)
+                        && this.collisions.tBack[i].length + this.collisions.tFront[i].length + 1 > chain.length) {
+                    chain = this.collisions.tBack[i].concat([i]).concat(this.collisions.tFront[i]);
                 }
             }
-            
-            this.calculateDxs();
+                
+            return chain;
         }
 
-        findNextTFront(index) {
+        calculateXs() {
             let i,
-                tBack = [],
-                maxFront = -1,
-                maxIndex = index;
-                
-            for (i = 0; i < this.collisions.back[index].length; ++i) {
-                if (this.getFirstIndexOf(this.collisions.back[index][i], this.collisions.tBack[index]) === -1) {
-                    tBack.push(this.collisions.back[index][i]);
+                last;
+            
+            for (i = 1; i < this.collisions.dx.length; ++i) {
+                if (this.collisions.tBack[i].length > 0) {
+                    last = this.collisions.tBack[i][this.collisions.tBack[i].length - 1];
+                    this.collisions.x[i] = this.collisions.x[last] + this.collisions.dx[last];
                 }
             }
-                
-            for (i = 0; i < tBack.length; ++i) {
-                if (this.collisions.tFront[tBack[i]].length > maxFront) {
-                    maxFront = this.collisions.tFront[tBack[i]].length;
-                    maxIndex = tBack[i];
-                }
-            }
-                
-            return maxIndex;
         }
     }
     
