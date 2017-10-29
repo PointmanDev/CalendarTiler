@@ -25,8 +25,9 @@ The width of the entire schedule period is normalized to be `1` so that
 So how do we generate the `x_a` and `w_a` values? We construct a directed acyclic graph (DAG) `G_A` from the sorted input array `S_A`, the traversal lengths of `G_A` produce the `w_a` values, and `x_a` can be computed from summing the `w_a` in the paths.
 
 # The Algorithm
-1. Sort `G_A` into `S_A`.
-2. Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b` < `e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
+Step 1: Sort `G_A` into `S_A`.
+
+Step 2: Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b` < `e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
 
 -----------
 l   `1`   l
@@ -77,11 +78,11 @@ l         l   `6`    l-----------
           
 So `tB_1` = {}, `tB_2` = {`1`}, `tB_3` = {}, `tB_4` = {`3`}, `tB_5` = {}, `tB_6` = {`5`} and `tB_7` = {`e`, `6`}.
 
-3. Generate a list of paths, `tF_A` for each `a` where `tF_A` is the "Transformed Front" of each appointment `a`, essentially these are the all appointments that come after `a` in the sorting that "block" `a` from moving to the right. This list is slightly more complicated to describe mathematically because it depends on the way `tB_A` turns out, if you look below you'll see that they might defy intuition slightly. Essentially we start by taking the "first" appointment `b` which prevents `a` from being moved to the right, and then iteratively build the rest of the list by adding the appointments in `tF_b` to `tF_a`. This means that the `tF_` lists will have the form {`b`} concatenated `tF_b` (if such a `b` exists, otherwise it will be {}). Fortunately the process to generate `tF_A` is still an iterative process and does not significantly impact the runtime.
+Step 3: Generate a list of paths, `tF_A` for each `a` where `tF_A` is the "Transformed Front" of each appointment `a`, essentially these are the all appointments that come after `a` in the sorting that "block" `a` from moving to the right. This list is slightly more complicated to describe mathematically because it depends on the way `tB_A` turns out, if you look below you'll see that they might defy intuition slightly. Essentially we start by taking the "first" appointment `b` which prevents `a` from being moved to the right, and then iteratively build the rest of the list by adding the appointments in `tF_b` to `tF_a`. This means that the `tF_` lists will have the form {`b`} concatenated `tF_b` (if such a `b` exists, otherwise it will be {}). Fortunately the process to generate `tF_A` is still an iterative process and does not significantly impact the runtime.
 
 So `tF_1` = {`2`}, `tB_2` = {}, `tB_3` = {`4`}, `tB_4` = {}, `tB_5` = {`4`}, `tB_6` = {`7`} and `tB_7` = {}.
 
-4. Now we have the DAG `G_A`, just separated into the appointments before a given appointment and the appoints after a given appointment. So from the above picture the graph `G_A` would look like,
+Step 4: Now we have the DAG `G_A`, just separated into the appointments before a given appointment and the appoints after a given appointment. So from the above picture the graph `G_A` would look like,
 
 `1` ---> `2` 
 
@@ -99,7 +100,7 @@ Intuitively this is the sum of all the widths in the "tranformed" traversal path
 
 `w_a` = 1/2, `w_b` = 1/2, `w_c` = 1/2, `w_d` = 1/2, `w_f` = 1/4 and `w_g` = 1/4.
 
-5. Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
+Step 5: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
 
 ---------
 l `a`   l
