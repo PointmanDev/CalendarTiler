@@ -29,7 +29,7 @@ Step 1: Sort `G_A` into `S_A`.
 
 Step 2: Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b` < `e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
 
-===========
+`===========
 l   `1`   l
 l         l===========
 l         l    `2`   l
@@ -50,10 +50,10 @@ l         l          l
                                                       l          l          l
                                                       ===========l          l
                                                                  l          l
-                                                                 ============
+                                                                 ============`
 becomes
 
-===========
+`===========
 l   `1`   l
 l         l===========
 l         l    `2`   l
@@ -74,7 +74,7 @@ l         l   `6`    l===========
           l          l          l
           ===========l          l
                      l          l
-                     ============
+                     ============`
           
 So `tB_1` = {}, `tB_2` = {`1`}, `tB_3` = {}, `tB_4` = {`3`}, `tB_5` = {}, `tB_6` = {`5`} and `tB_7` = {`e`, `6`}.
 
