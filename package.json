@@ -1,0 +1,23 @@
+{
+  "name": "calendar-tiler",
+  "version": "1.0.0",
+  "description": "Algorithm for tiling a calendar filled with appointments",
+  "main": "index.js",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-cli": "^6.26.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/leosdibella/CalendarTiler.git"
+  },
+  "author": "Leonardo DiBella",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/leosdibella/CalendarTiler/issues"
+  },
+  "homepage": "https://github.com/leosdibella/CalendarTiler#readme"
+}

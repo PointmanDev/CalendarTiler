@@ -1,20 +1,35 @@
-/*global define, module*/
+/*global define module*/
 (function (root, factory) {
-    'use strict';
-    
     if (typeof define === 'function' && define.amd) {
         define([], factory);
     } else if (typeof module === 'object' && module.exports) {
         module.exports = factory();
     } else {
-        root.calendarTile = factory();
+        root.calendarTiler = factory();
     }
 }(this, function () {
-    'use strict';
-    
-    var collisions,
-        getTail = function calendarTiler_getTail(head, array) {
-            var i;
+    class CalendarTiler {
+        static isString(value) {
+            return typeof value === 'string' || value instanceof String;
+        }
+
+        static sortAppointments(a, b) {
+            return a.start - b.start || b.end - a.end;
+        }
+        
+        static initializeCollisionSubArray(initialValue, length) {
+            let i,
+                array = [];
+
+            for (i = length - 1; i >= 0; --i) {
+                array.push(typeof initialValue !== 'undefined' ? initialValue : []);
+            }
+                
+            return array;
+        }
+
+        static getTail(head, array) {
+            let i;
             
             for (i = head + 1; i < array.length; ++i) {
                 if (array[i] !== -1) {
@@ -23,9 +38,10 @@
             }
             
             return array.length;
-        },
-        getFirstIndexOf = function calendarTiler_getFirstIndexOf(val, array) {
-            var i;
+        }
+
+        static getFirstIndexOf(val, array) {
+            let i;
             
             for (i = 0; i < array.length; ++i) {
                 if (array[i] === val) {
@@ -34,77 +50,222 @@
             }
             
             return -1;
-        },
-        calculateXs = function calendarTiler_calculateXs() {
-            var i,
+        }
+
+        constructor(appointments, tileParameters) {
+            if (!Array.isArray(appointments)) {
+                throw 'CalendarTiler constructor, 1st argument - appointments: expects array.';
+            }
+
+            if (tileParameters !== Object(tileParameters)) {
+                throw 'CalendarTiler constructor, 2nd argument - tileParameters: expects object.';
+            }
+
+            this.tileParameters = this.mapTileParameters(tileParameters);
+            this.appointments = this.copyRelevantAppointmentData(appointments);
+            this.collisions = this.initializeCollisions();
+
+            this.initialize();
+        }
+
+        mapTileParameters(tileParameters) {
+            let usesDuration = this.isString(tileParameters.duration);
+            
+            return {
+                usesDuration: usesDuration,
+                id: this.isString(tileParameters.id) ? tileParameters.id : 'id',
+                start: this.isString(tileParameters.start) ? tileParameters.start : 'start',
+                delineator: usesDuration ? tileParameters.duration : (this.isString(tileParameters.end) ? tileParameters.end : 'end')
+            };
+        }
+
+        getAppointmentEnd(appointment) {
+            if (this.tileParameters.usesDuration) {
+                return appointment[this.tileParameters.start] + appointment[this.tileParameters.duration];
+            }
+
+            return appointment[this.tileParameters.end];
+        }
+
+        copyRelevantAppointmentData(appointments) {
+            let i,
+                values = [];
+            
+            for (i = appointments.length - 1; i >= 0; --i) {
+                values.push({
+                    id: appointments[i][this.tileParameters.id],
+                    start: appointments[i][this.tileParameters.start],
+                    end: this.getAppointmentEnd(appointments[i])
+                });
+            }
+
+            return values.sort(this.sortAppointments);
+        }
+
+        initializeCollisions() {
+            let appointmentsLength = this.appointments.length;
+
+            return {
+                front: this.initializeCollisionSubArray(appointmentsLength),
+                back: this.initializeCollisionSubArray(appointmentsLength),
+                tBack: this.initializeCollisionSubArray(appointmentsLength, -1),
+                tFront: this.initializeCollisionSubArray(appointmentsLength),
+                dx: this.initializeCollisionSubArray(appointmentsLength, 1),
+                x: this.initializeCollisionSubArray(appointmentsLength, 0)
+            };
+        }
+
+        initialize() {
+            let j,
+                k;
+
+            if (this.appointments.length > 0) {
+                for (j = 0; j < this.appointments.length; ++j) {
+                    for (k = j + 1; k < this.appointments.length; ++k) {
+                        if (this.appointments[k].start < this.appointments[j].end) {
+                            this.collisions.front[j].push(k);
+                        }
+                    }
+                
+                    for (k = 0; k < j; ++k) {
+                        if (this.appointments[k].end > this.appointments[j].start) {
+                            this.collisions.back[j].push(k);
+                        }
+                    }
+                }
+                
+                this.buildTBack();
+            }
+        
+            return {
+                dx: this.collisions.dx,
+                x: this.collisions.x
+            };
+        }
+
+        buildTBack() {
+            let next,
+                head,
+                tail,
+                path;
+            
+            while (this.getFirstIndexOf(-1, this.collisions.tBack) > -1) {
+                head = this.getFirstIndexOf(-1, this.collisions.tBack);
+                tail = this.getTail(head, this.collisions.tBack);
+                path = (head > 0 ? this.collisions.tBack[head - 1].concat([head - 1]) : []);
+                
+                while (head < tail) {
+                    this.collisions.tBack[head] = path;
+                    next = this.collisions.front[head][this.collisions.front[head].length - 1];
+                    head = (next ? (next >= tail ? tail : next + 1) : head + 1);
+                }
+            }
+            
+            this.buildTFront();
+        }
+
+        buildTFront() {
+            let i,
+                next;
+            
+            for (i = 0; i < this.collisions.tFront.length; ++i) {
+                if (this.collisions.back[i].length === this.collisions.tBack[i].length) {
+                    if (this.collisions.front[i].length > 0
+                            && this.collisions.tBack[this.collisions.front[i][0]].length > this.collisions.tBack[i].length) {
+                        this.collisions.tFront[i].push(this.collisions.front[i][0]);
+                    }
+                } else {
+                    next = this.findNextTFront(i, this.collisions);
+                        
+                    if (this.collisions.front[i].length > 0
+                            && this.getFirstIndexOf(next, this.collisions.back[this.collisions.front[i][0]]) > -1) {
+                        if (this.collisions.tBack[this.collisions.front[i][0]].length < this.collisions.tBack[i].length) {
+                            this.collisions.tFront[i].push(next);
+                        } else {
+                            this.collisions.tFront[i].push(this.collisions.front[i][0]);
+                        }
+                    } else {
+                        this.collisions.tFront[i].push(next);
+                    }
+                }
+            }
+            
+            this.expandTFront();
+        }
+
+        calculateXs() {
+            let i,
                 last;
             
-            for (i = 1; i < collisions.dx.length; ++i) {
-                if (collisions.tBack[i].length > 0) {
-                    last = collisions.tBack[i][collisions.tBack[i].length - 1];
-                    collisions.x[i] = collisions.x[last] + collisions.dx[last];
-				}
+            for (i = 1; i < this.collisions.dx.length; ++i) {
+                if (this.collisions.tBack[i].length > 0) {
+                    last = this.collisions.tBack[i][this.collisions.tBack[i].length - 1];
+                    this.collisions.x[i] = this.collisions.x[last] + this.collisions.dx[last];
+                }
             }
-        },
-        findLongestChainThroughNode = function calendarTiler_findLongestChainThroughNode(index) {
-            var i,
-                chain = collisions.tBack[index].concat([index]).concat(collisions.tFront[index]);
+        }
+
+        findLongestChainThroughNode(index) {
+            let i,
+                chain = this.collisions.tBack[index].concat([index]).concat(this.collisions.tFront[index]);
                 
-            for (i = index; i < collisions.front[index].length; ++i) {
-                if ((getFirstIndexOf(index, collisions.tBack[i]) > -1 || getFirstIndexOf(index, collisions.tFront[i]) > -1)
-                        && collisions.tBack[i].length + collisions.tFront[i].length + 1 > chain.length) {
-                    chain = collisions.tBack[i].concat([i]).concat(collisions.tFront[i]);
+            for (i = index; i < this.collisions.front[index].length; ++i) {
+                if ((this.getFirstIndexOf(index, this.collisions.tBack[i]) > -1 || this.getFirstIndexOf(index, this.collisions.tFront[i]) > -1)
+                        && this.collisions.tBack[i].length + this.collisions.tFront[i].length + 1 > chain.length) {
+                    chain = this.collisions.tBack[i].concat([i]).concat(this.collisions.tFront[i]);
                 }
             }
                 
             return chain;
-        },
-        calculateDxs = function calendarTiler_calculateDxs() {
-            var i,
+        }
+
+        calculateDxs() {
+            let i,
                 j,
                 chain,
                 width,
                 unset;
 				
-            for (i = 0; i < collisions.tBack.length; ++i) {
-                if (collisions.dx[i] === 1) {
-                    if (collisions.tFront[i].length === 0) {
-                        for (j = 0; j < collisions.tBack[i].length; ++j) {
-                            collisions.dx[i] -= collisions.dx[collisions.tBack[i][j]];
+            for (i = 0; i < this.collisions.tBack.length; ++i) {
+                if (this.collisions.dx[i] === 1) {
+                    if (this.collisions.tFront[i].length === 0) {
+                        for (j = 0; j < this.collisions.tBack[i].length; ++j) {
+                            this.collisions.dx[i] -= this.collisions.dx[this.collisions.tBack[i][j]];
                         }
                     } else {
-                        chain = findLongestChainThroughNode(i, collisions);
+                        chain = this.findLongestChainThroughNode(i);
                         unset = 0;
                         width = 0;
                             
                         for (j = 0; j < chain.length; ++j) {
-                            if (collisions.dx[chain[j]] < 1) {
-                                width += collisions.dx[chain[j]];
+                            if (this.collisions.dx[chain[j]] < 1) {
+                                width += this.collisions.dx[chain[j]];
                             } else {
                                 ++unset;
                             }
                         }
                         
-                        collisions.dx[i] = (1 - width) / unset;
+                        this.collisions.dx[i] = (1 - width) / unset;
                     }
                 }
             }
             
-            calculateXs(collisions);
-        },
-        expandTFront = function calendarTiler_expandTFront() {
-            var i,
+            this.calculateXs();
+        }
+
+        expandTFront() {
+            let i,
                 next;
 				
-            for (i = 0; i < collisions.tFront.length; ++i) {
-                if (collisions.tFront[i].length > 0) {
-                    next = collisions.tFront[i].length > 0 ? collisions.tFront[collisions.tFront[i][0]][0] : null;
+            for (i = 0; i < this.collisions.tFront.length; ++i) {
+                if (this.collisions.tFront[i].length > 0) {
+                    next = this.collisions.tFront[i].length > 0 ? this.collisions.tFront[this.collisions.tFront[i][0]][0] : null;
                     
                     while (next) {
-                        collisions.tFront[i].push(next);
+                        this.collisions.tFront[i].push(next);
                         
-                        if (collisions.tFront[next].length > 0) {
-                            next = collisions.tFront[next][0];
+                        if (this.collisions.tFront[next].length > 0) {
+                            next = this.collisions.tFront[next][0];
                         } else {
                             next = null;
                         }
@@ -112,125 +273,31 @@
                 }
             }
             
-            calculateDxs(collisions);
-        },
-        findNextTFront = function calendarTiler_findNextTFront(index) {
-            var i,
+            this.calculateDxs();
+        }
+
+        findNextTFront(index) {
+            let i,
                 tBack = [],
                 maxFront = -1,
                 maxIndex = index;
                 
-            for (i = 0; i < collisions.back[index].length; ++i) {
-                if (getFirstIndexOf(collisions.back[index][i], collisions.tBack[index]) === -1) {
-                    tBack.push(collisions.back[index][i]);
+            for (i = 0; i < this.collisions.back[index].length; ++i) {
+                if (this.getFirstIndexOf(this.collisions.back[index][i], this.collisions.tBack[index]) === -1) {
+                    tBack.push(this.collisions.back[index][i]);
                 }
             }
                 
             for (i = 0; i < tBack.length; ++i) {
-                if (collisions.tFront[tBack[i]].length > maxFront) {
-                    maxFront = collisions.tFront[tBack[i]].length;
+                if (this.collisions.tFront[tBack[i]].length > maxFront) {
+                    maxFront = this.collisions.tFront[tBack[i]].length;
                     maxIndex = tBack[i];
                 }
             }
                 
             return maxIndex;
-        },
-        buildTFront = function calendarTiler_buildTFront() {
-            var i,
-                next;
-            
-            for (i = 0; i < collisions.tFront.length; ++i) {
-                if (collisions.back[i].length === collisions.tBack[i].length) {
-                    if (collisions.front[i].length > 0
-                            && collisions.tBack[collisions.front[i][0]].length > collisions.tBack[i].length) {
-                        collisions.tFront[i].push(collisions.front[i][0]);
-                    }
-                } else {
-                    next = findNextTFront(i, collisions);
-                        
-                    if (collisions.front[i].length > 0
-                            && getFirstIndexOf(next, collisions.back[collisions.front[i][0]]) > -1) {
-                        if (collisions.tBack[collisions.front[i][0]].length < collisions.tBack[i].length) {
-                            collisions.tFront[i].push(next);
-                        } else {
-                            collisions.tFront[i].push(collisions.front[i][0]);
-                        }
-                    } else {
-                        collisions.tFront[i].push(next);
-                    }
-                }
-            }
-            
-            expandTFront(collisions);
-        },
-        buildTBack = function calendarTiler_buildTBack() {
-            var next,
-                head,
-				tail,
-				path;
-            
-            while (getFirstIndexOf(-1, collisions.tBack) > -1) {
-                head = getFirstIndexOf(-1, collisions.tBack);
-				tail = getTail(head, collisions.tBack);
-                path = (head > 0 ? collisions.tBack[head - 1].concat([head - 1]) : []);
-					
-				while (head < tail) {
-					collisions.tBack[head] = path;
-					next = collisions.front[head][collisions.front[head].length - 1];
-					head = (next ? (next >= tail ? tail : next + 1) : head + 1);
-                }
-            }
-            
-            buildTFront(collisions);
-        },
-        buildCollisionArrays = function calendarTiler_buildCollisionArrays(events) {
-            var j,
-				k;
-            
-            if (events.length > 0) {
-                for (j = 0; j < events.length; ++j) {
-					for (k = j + 1; k < events.length; ++k) {
-						if (events[k].start < events[j].start + events[j].duration) {
-                            collisions.front[j].push(k);
-                        }
-                    }
-                    
-                    for (k = 0; k < j; ++k) {
-                        if (events[k].start + events[k].duration > events[j].start) {
-                            collisions.back[j].push(k);
-                        }
-                    }
-                }
-			
-                buildTBack(collisions);
-            }
-        },
-        initializeCollisionSubArray = function initializeCollisionSubArray(numberOfEvents, initialValue) {
-            var i,
-                array = [];
-                
-            for (i = 0; i < numberOfEvents; ++i) {
-                array.push(typeof initialValue !== 'undefined' ? initialValue : []);
-            }
-                
-            return array;
-        };
+        }
+    }
     
-    return function calendarTile(events) {
-        collisions = {
-            front: initializeCollisionSubArray(events.length),
-            back: initializeCollisionSubArray(events.length),
-            tBack: initializeCollisionSubArray(events.length, -1),
-            tFront: initializeCollisionSubArray(events.length),
-            dx: initializeCollisionSubArray(events.length, 1),
-            x: initializeCollisionSubArray(events.length, 0)
-        };
-            
-        buildCollisionArrays(events);
-            
-        return {
-            dx: collisions.dx,
-            x: collisions.x
-        };
-    };
+    return CalendarTiler;
 }));
