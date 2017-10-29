@@ -26,53 +26,53 @@ So how do we generate the `x_a` and `w_a` values? We construct a directed acycli
 
 # The Algorithm
 1. Sort `G_A` into `S_A`.
-2. Generate the a list of paths, `tB_A' for each `a`, where 'tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b` < `e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
+2. Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b` < `e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
 
 -----------
-|   `1`   |
-|         |-----------
-|         |    `2`   |
-|         |          |
-|         |          |
-|         |          |
+l   `1`   l
+l         l-----------
+l         l    `2`   l
+l         l          l
+l         l          l
+l         l          l
 ---------------------------------
-                     |    `3`   |
-                     |          |
-                     |          |-----------
-                     |          |    `4`   |
-                     |          |          |
-                     -----------|          |-----------
-                                |          |    `5`   |
-                                -----------|          |-----------
-                                           |          |    `6`   |-----------
-                                           -----------|          |    `7`   |
-                                                      |          |          |
-                                                      -----------|          |
-                                                                 |          |
+                     l    `3`   l
+                     l          l
+                     l          l-----------
+                     l          l    `4`   l
+                     l          l          l
+                     -----------l          l-----------
+                                l          l    `5`   l
+                                -----------l          l-----------
+                                           l          l    `6`   l-----------
+                                           -----------l          l    `7`   l
+                                                      l          l          l
+                                                      -----------l          l
+                                                                 l          l
                                                                  ------------
 becomes
 
 -----------
-|   `1`   |
-|         |-----------
-|         |    `2`   |
-|         |          |
-|         |          |
-|         |          |
-|---------|-----------
-|   `3`   |
-|         |
-|         |-----------
-|         |    `4`   |
-|         |          |
-|---------|          |
-|   `5`   |          |
-|         |----------|
-|         |   `6`    |-----------
-----------|          |    `7`   |
-          |          |          |
-          -----------|          |
-                     |          |
+l   `1`   l
+l         l-----------
+l         l    `2`   l
+l         l          l
+l         l          l
+l         l          l
+l---------l-----------
+l   `3`   l
+l         l
+l         l-----------
+l         l    `4`   l
+l         l          l
+l---------l          l
+l   `5`   l          l
+l         l----------l
+l         l   `6`    l-----------
+----------l          l    `7`   l
+          l          l          l
+          -----------l          l
+                     l          l
                      ------------
           
 So `tB_1` = {}, `tB_2` = {`1`}, `tB_3` = {}, `tB_4` = {`3`}, `tB_5` = {}, `tB_6` = {`5`} and `tB_7` = {`e`, `6`}.
@@ -87,7 +87,7 @@ So `tF_1` = {`2`}, `tB_2` = {}, `tB_3` = {`4`}, `tB_4` = {}, `tB_5` = {`4`}, `tB
 
 `3` ---> `4`
           ^
-   -------|
+   -------l
   /
 `5` ---> `6` ---> `7`
 
@@ -102,26 +102,26 @@ Intuitively this is the sum of all the widths in the "tranformed" traversal path
 5. Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
 
 ---------
-| `a`   |
-|       |--------
-|       | `b`   |
-|       |       |
-|       |       |
-|       |       |
-|-------|--------
-|  `c`  |
-|       |
-|       |--------
-|       |  `d`  |
-|       |       |
-|-------|       |
-|  `e`  |       |
-|       |-------|
-|       |`f`|----
---------|   |`g`|
-        |   |   |
-        ----|   |
-            |   |
+l `a`   l
+l       l--------
+l       l `b`   l
+l       l       l
+l       l       l
+l       l       l
+l-------l--------
+l  `c`  l
+l       l
+l       l--------
+l       l  `d`  l
+l       l       l
+l-------l       l
+l  `e`  l       l
+l       l-------l
+l       l`f`l----
+--------l   l`g`l
+        l   l   l
+        ----l   l
+            l   l
             -----
 
 And that's it! Not too hard thanks to the sorting of `S_A` and the nice properties of a DAG.
