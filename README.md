@@ -127,3 +127,26 @@ l       l`f`l++++
 
 And that's it! Not too hard thanks to the sorting of `S_A` and the nice properties of a DAG.
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
+
+
+    +-----------------------------------------+
+    |                                         |
+    |       Protractor End-to-End Tests       |
+    |                                         |
+    +-----------------------------------------+
+                                               
+    +------------------+                       
+    |                  |                       
+    | Symfony2         |                       
+    | Functional Tests |                       
+    |                  |                       
+    +------------------+                       
+                                               
+    +------------------+   +------------------+
+    |                  |   |                  |
+    | Symfony2         |   | Angular          |
+    | Unit tests       |   | Unit tests       |
+    |                  |   |                  |
+    +------------------+   +------------------+
+                                               
+          Backend                Frontend      
