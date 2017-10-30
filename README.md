@@ -25,7 +25,7 @@ The width of the entire schedule period is normalized to be `1` so that
 So how do we generate the `x_a` and `w_a` values? We construct a directed acyclic graph (DAG) `G_A` from the sorted input array `S_A`, the traversal lengths of `G_A` produce the `w_a` values, and `x_a` can be computed from summing the `w_a` in the paths.
 
 # The Algorithm
-Step 1: Sort `G_A` into `S_A`.
+Step 1: Sort `A` into `S_A`.
 
 Step 2: Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b < e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
 
