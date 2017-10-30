@@ -115,7 +115,7 @@ Step 5: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the 
     |       +-------+
     |       |   4   |
     |       |       |
-    +------+        |
+    +-------+       |
     |   5   |       |
     |       +---+---+
     |       | 6 +---+
