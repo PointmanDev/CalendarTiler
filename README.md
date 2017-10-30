@@ -126,4 +126,5 @@ Step 5: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the 
                 +---+
 
 And that's it! Not too hard thanks to the sorting of `S_A` and the nice properties of the DAG `G_A`
+
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
