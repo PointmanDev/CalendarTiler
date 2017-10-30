@@ -27,7 +27,7 @@ So how do we generate the `x_a` and `w_a` values? We construct a directed acycli
 # The Algorithm
 Step 1: Sort `A` into `S_A`.
 
-Step 2: Generate to arrays of paths `B_A` and `F_A` the "front" and "back" arrays for each `a` in `A`. This is done by simply iterating through `S_A` so that `b` is in `F_a` if `s_b < e_a` (and `b` appears after `a` in the sort order), and `b` is in `B_a` if `e_b > s_a`. Pictorially below,
+Step 2: Generate to arrays of paths `F_A` and `B_A` the "front" and "back" arrays respectively for each `a` in `A`. This is done by simply iterating through `S_A` so that `b` is in `F_a` if `s_b < e_a` (and `b` appears after `a` in the sort order), and `b` is in `B_a` if `e_b > s_a`. Pictorially below,
 
     +---------+
     |    1    |
