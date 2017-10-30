@@ -27,7 +27,7 @@ So how do we generate the `x_a` and `w_a` values? We construct a directed acycli
 # The Algorithm
 Step 1: Sort `A` into `S_A`.
 
-Step 2: Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "Transformed Back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted list of appointments `b` where `s_b < e_a`. Then `tB_A` is the list of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially, (assume all widths are equal to 1 until set in a later step)
+Step 2: Generate to arrays of paths `B_A` and `F_A` the "front" and "back" arrays for each `a` in `A`. This is done by simply iterating through `S_A` so that `b` is in `F_a` if `s_b < e_a` (and `b` appears after `a` in the sort order), and `b` is in `B_a` if `e_b > s_a`. Pictorially below,
 
     +---------+
     |    1    |
@@ -51,7 +51,10 @@ Step 2: Generate the a list of paths, `tB_A` for each `a`, where `tB_A` is the "
                                                           +----------+          |
                                                                      |          |
                                                                      +----------+
-becomes
+                                                                     
+So `B_1 = {}, B_2 = {1}, B_3 = {}, B_4 = {3}, B_5 = {4}, B_6 = {5}, B_7 = {5, 6}` and `F_1 = {2}, F_2 = {}, F_3 = {4}, F_4 = {5}, F_5 = {6, 7}, F_6 = {7}, F_7 = {}`.
+
+Step 3: Generate the a arrays of paths, `tB_A` for each `a`, where `tB_A` is the "transformed back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted array of appointments `b` where `s_b < e_a`. Then `tB_A` is the array of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially below,
 
     +---------+
     |    1    |
@@ -76,19 +79,19 @@ becomes
                          |          |
                          +----------+
           
-So `tB_1 = {}, tB_2 = {1}, tB_3 = {}, tB_4 = {3}, tB_5 = {}, tB_6 = {5} and tB_7 = {5, 6}`
+So `tB_1 = {}, tB_2 = {1}, tB_3 = {}, tB_4 = {3}, tB_5 = {}, tB_6 = {5} and tB_7 = {5, 6}`.
 
-Step 3: Generate a list of paths, `tF_A` for each `a` where `tF_A` is the "Transformed Front" of each appointment `a`, essentially these are the all appointments that come "after" `a` and "block" it from moving to the right. This list is slightly more complicated to describe mathematically because it completely depends on the way `tB_A` is computed, if you look below you'll see that they might defy intuition slightly.
+Step 4: Generate a array of paths, `tF_A` for each `a` where `tF_A` is the "transformed front" of each appointment `a`, essentially these are the all appointments that come "after" `a` and "block" it from moving to the right. This array is slightly more complicated to describe mathematically because it completely depends on the way `tB_A` is computed, if you look below you'll see that they might defy intuition slightly.
 
-Essentially we start by taking the "first" appointment `b` which prevents `a` from being moved to the right, and then iteratively build the rest of the list by adding the appointments in `tF_b` to `tF_a`. This means that the `tF_*` lists will have the form {`b`} concatenated `tF_b` (if such a `b` exists, otherwise it will be `{}`). Fortunately the process to generate `tF_A` is still an iterative process and does not significantly impact the runtime. The logic to determine the "first" such appointment `b` is rather involved, there are 4 cases that can happen,
+Essentially we start by taking the "first" appointment `b` which prevents `a` from being moved to the right, and then iteratively build the rest of the array by adding the appointments in `tF_b` to `tF_a`. This means that the `tF_*` arrays will have the form {`b`} concatenated `tF_b` (if such a `b` exists, otherwise it will be `{}`). Fortunately the process to generate `tF_A` is still an iterative process and does not significantly impact the runtime. The logic to determine the "first" such appointment `b` is rather involved, there are 4 cases that can happen,
 
-Case 1: `tB_a` is maximal in size and there's another appointment `b` where `a` is in `tB_b`, and `#(t_Bb) > #(t_Ba)`, then `b` is the first element of `t_Fa`.
+Case 1: `tB_a` is maximal in size (i.e. `tB_A == B_A`) and there's another appointment `b` where `a` is in `tB_b`, and `#(t_Bb) > #(t_Ba)`, then `b` is the first element of `t_Fa` (Note that `#()` simply evaluates the length of the array).
 
-The remaining 3 cases will come in a future edit.
+The remaining 3 cases will come in a future edit, they are a bit more involved.
 
-So `tF_1 = {2}, tB_2 = {}, tB_3 = {4}, tB_4 = {}, tB_5 = {4}, tB_6 = {7} and tB_7 = {}`
+So `tF_1 = {2}, tB_2 = {}, tB_3 = {4}, tB_4 = {}, tB_5 = {4}, tB_6 = {7} and tB_7 = {}`.
 
-Step 4: Now we have the DAG `G_A`, just separated into the appointments before a given appointment and the appoints after a given appointment. So from the above picture the graph `G_A` would look like,
+Step 5: Now we have the DAG `G_A`, just separated into the appointments before a given appointment and the appoints after a given appointment. So from the above picture the graph `G_A` would look like,
 
      1  --->  2  
 
@@ -98,15 +101,15 @@ Step 4: Now we have the DAG `G_A`, just separated into the appointments before a
       /
      5  --->  6  --->  7 
 
-To calculate the widths `w_a` we set `w_a = 1` for all `a` in `S_A` then we iterate through the sorted list `S_A` and take `w_a = 1 / (SUM(w_tB_a) + SUM(w_tF_a) + 1)`
+To calculate the widths `w_a` we set `w_a = 1` for all `a` in `S_A` then we iterate through the sorted array `S_A` and take `w_a = 1 / (SUM(w_tB_a) + SUM(w_tF_a) + 1)`
 
 (Note here, the `1` in the denominator of the equation comes from `a` itself)
 
-Intuitively this is the sum of all the widths in the "tranformed" traversal path. So as we get further into the sorting more of the `w_a` have assigned values that are not 1. This allows the earlier appointments to get precedence in how their widths are set and subsequently influence later appointments into fitting into the more confined spaces. Thus it's easy to see that,
+Intuitively this is the sum of all the widths in the "transformed" traversal path. So as we get further into the sorting more of the `w_a` have assigned values that are not 1. This allows the earlier appointments to get precedence in how their widths are set and subsequently influence later appointments into fitting into the more confined spaces. Thus it's easy to see that,
 
 `w_1 = 1/2, w_2 = 1/2, w_3 = 1/2, w_4 = 1/2, w_5 = 1/2, w_6 = 1/4 and w_6 = 1/4`
 
-Step 5: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
+Step 6: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
 
     +-------+
     |   1   |
