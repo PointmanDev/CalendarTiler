@@ -186,8 +186,7 @@ class CalendarTiler {
         findNextTFront(index) {
             let i,
                 tFront = [],
-                minFront,
-                minIndex;
+                minFront;
             
             for (i = 0; i < collisions.back[index].length; ++i) {
                 if (getFirstIndexOf(collisions.back[index][i], collisions.tBack[index]) === -1) {
@@ -195,17 +194,15 @@ class CalendarTiler {
                 }
             }
             
-            minIndex = tFront[0];
-            minFront = collisions.tFront[minIndex][0];
+            minFront = tFront[0];
             
-            for (i = tFront.length - 1; i > 0; --i) {
+            for (i = 1; i < tFront.length; ++i) {
                 if (collisions.tFront[tFront[i]] === minFront) {
                     minFront = collisions.tFront[tFront[i]];
-                    minIndex = tFront[i];
                 }
             }
-                
-            return minIndex;
+            
+            return minFront;
         }
 
         expandTFront() {
