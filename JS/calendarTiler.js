@@ -188,17 +188,17 @@ class CalendarTiler {
                 tFront = [],
                 minFront;
             
-            for (i = 0; i < collisions.back[index].length; ++i) {
-                if (collisions.tFront[tFront[i]].length > 0 && collisions.tFront[tFront[i]][0] === minFront) {
-                    tFront.push(collisions.back[index][i]);
+            for (i = 0; i < this.collisions.back[index].length; ++i) {
+                if (this.collisions.tFront[tFront[i]].length > 0 && this.collisions.tFront[tFront[i]][0] === minFront) {
+                    tFront.push(this.collisions.back[index][i]);
                 }
             }
             
             minFront = tFront[0];
             
             for (i = 1; i < tFront.length; ++i) {
-                if (collisions.tFront[tFront[i]] === minFront) {
-                    minFront = collisions.tFront[tFront[i]][0];
+                if (this.collisions.tFront[tFront[i]] === minFront) {
+                    minFront = this.collisions.tFront[tFront[i]][0];
                 }
             }
             
@@ -211,7 +211,7 @@ class CalendarTiler {
 				
             for (i = 0; i < this.collisions.tFront.length; ++i) {
                 if (this.collisions.tFront[i].length > 0) {
-                    next = this.collisions.tFront[i].length > 0 ? this.collisions.tFront[this.collisions.tFront[i][0]][0] : null;
+                    next = this.collisions.tFront[this.collisions.tFront[i][0]][0];
                     
                     while (next) {
                         this.collisions.tFront[i].push(next);
