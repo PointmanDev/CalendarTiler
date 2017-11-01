@@ -198,7 +198,7 @@ class CalendarTiler {
             
             for (i = 1; i < tFront.length; ++i) {
                 if (collisions.tFront[tFront[i]] === minFront) {
-                    minFront = collisions.tFront[tFront[i]];
+                    minFront = collisions.tFront[tFront[i]][0];
                 }
             }
             
