@@ -1,14 +1,14 @@
 class CalendarTiler {
-	static isString(value) {
-            return typeof value === 'string' || value instanceof String;
-        }
-
-        static sortAppointments(a, b) {
-            return a.start - b.start || b.end - a.end;
-        }
-        
-        static initializeCollisionSubArray(initialValue, length) {
-            let i,
+    static isString(value) {
+        return typeof value === 'string' || value instanceof String;
+    }
+    
+    static sortAppointments(a, b) {
+        return a.start - b.start || b.end - a.end;
+    }
+    
+    static initializeCollisionSubArray(initialValue, length) {
+        let i,
                 array = [];
 
             for (i = length - 1; i >= 0; --i) {
@@ -185,24 +185,27 @@ class CalendarTiler {
 
         findNextTFront(index) {
             let i,
-                tBack = [],
-                maxFront = -1,
-                maxIndex = index;
-                
-            for (i = 0; i < this.collisions.back[index].length; ++i) {
-                if (this.getFirstIndexOf(this.collisions.back[index][i], this.collisions.tBack[index]) === -1) {
-                    tBack.push(this.collisions.back[index][i]);
+                tFront = [],
+                minFront,
+                minIndex;
+            
+            for (i = 0; i < collisions.back[index].length; ++i) {
+                if (getFirstIndexOf(collisions.back[index][i], collisions.tBack[index]) === -1) {
+                    tFront.push(collisions.back[index][i]);
+                }
+            }
+            
+            minIndex = tFront[0];
+            minFront = collisions.tFront[minIndex][0];
+            
+            for (i = tFront.length - 1; i > 0; --i) {
+                if (collisions.tFront[tFront[i]] === minFront) {
+                    minFront = collisions.tFront[tFront[i]];
+                    minIndex = tFront[i];
                 }
             }
                 
-            for (i = 0; i < tBack.length; ++i) {
-                if (this.collisions.tFront[tBack[i]].length > maxFront) {
-                    maxFront = this.collisions.tFront[tBack[i]].length;
-                    maxIndex = tBack[i];
-                }
-            }
-                
-            return maxIndex;
+            return minIndex;
         }
 
         expandTFront() {
