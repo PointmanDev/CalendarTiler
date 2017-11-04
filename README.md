@@ -182,4 +182,7 @@ Pictorally (Diagram 4) shows the final result of the algorithm.
 
 And that's it! Not too hard thanks to the sorting on `A` and the graph traversals of `DAG_A`.
 
+# Consequences
+Note that this algorithm "prefers" earlier appointments in the sense that later appointments can appear much narrower in certain cases (as seen in Diagram 4). Some trade off needs to be made to determine which appointments "get the shaft" so to speak, since it's not possible to scale them all into the same widths and preserve the aesthetic quality of being able to shove it nicely inside a rectangle.
+
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
