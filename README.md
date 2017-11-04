@@ -144,7 +144,7 @@ Note that Step 5 is actually not a step, it's really more of a consideration, be
 Step 6: Time to calculate the `w_a` values for each `a` in `A`. This is done in the following way,
 * First set `w_a = 1` for all `a` in `A`
 * Iterate through `A` using the sort order
-    1. If `TBack_a` is empty then set `w_b = 1 / Length(Traversal_A)` for all `b` in `Traversal_A` (note this includes `w_a`).
+    1. If `TBack_a` is empty then set `w_b = 1 / Length(Traversal_a)` for all `b` in `Traversal_a` (note this includes `w_a`).
     2. Find `Traversal_b` which includes `a` and is the traversal with the longest length then
         * Set `width = SUM w_c` where `c` in `Traversal_b` and `c < 1`
         * Set `unset = SUM w_c` where `c` in `Traversal_b` and `c == 1`
