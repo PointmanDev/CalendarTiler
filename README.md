@@ -180,6 +180,6 @@ Pictorally (Diagram 4) shows the final result of the algorithm.
                                 |   |   |
                                 +---+---+
 
-And that's it! Not too hard thanks to the sorting on `A` and the nice properties of the DAG `G_A`.
+And that's it! Not too hard thanks to the sorting on `A` and the nice properties of the DAG `DAG_A`.
 
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
