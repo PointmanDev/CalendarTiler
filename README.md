@@ -1,139 +1,185 @@
 # CalendarTiler
-An algorithm for aesthetically displaying appointments/events on a calendar, currently implemented in JS (more languages to come)
+An algorithm for aesthetically displaying appointments/events on a calendar, currently implemented in JS (more languages to come).
 
 # Why?
-I wrote this for work (back around 3/16) because we needed a way to display a user's schedule for the day/week/whatever. I thought about the problem for a while and decided to approach it from what I viewed as the most aesthetically pleasing method to tile a calendar with a person's appointments/events/what-have-you.
+At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this method and implemented it in JS (my desk was covered in scratch pad paper with little boxes drawn all over them for about 2 weeks, fun times).
 
-# How? (Full length paper on the way along with demo code, TL;DR below)
-The algorithm works by accepting an array of appointments `A` where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` can be any real valued number, however in practice `0 < s_a <= 24` is a typical use case. Also in principal `e_a`, can be any real valued number greater than `s_a` however in practice `s_a < e_a <= 24` is a typical use case. 
+# How?
+The algorithm works by accepting an array of appointments `A` as an input, where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` and `e_a` can be any real valued numbers with `s_a < e_a` (however `0 < s_a < e_a <= 24` is a typical use case).
 
-Given `A` we first sort in the following way,
-* `a1 <= a2 iff s_a1 < s_a2 or (s_a1 == s_a2 and e_a1 >= e_a2)`
-This means the appointments are first sorted by their start value in ascending fashion and subsequently sorted by their end value in descending fashion in the case of equal start values. We'll call the sorted array `S_A`.
-
-The goal of the algorithm is so that for each appointment `a in A` we assign it an ordered 4-tuple (i.e. a 4 dimensional vector) `t_a = (s_a, e_a, x_a, w_a)` where
+The goal of the algorithm is to produce a array `Tiling_A` which for each appointment `a` in `A` contains a 4-dimensional vector `tile_a = (s_a, e_a, x_a, w_a)` where
 * `s_a` is the start value
 * `e_a` is the end value
 * `x_a` is the horizontal value
-* `w_a` is the width ... the choice of 'w' over 'y' was a tough one ;)
-
-The set of values is returned as an array `T_A` in the sorted order as described above. This allows a person to 'draw' each apppointment (box) to the x-y plane (screen) as follows, `a` is rendered as the rectangle with coordinates (from upper+eft, upper-right, lower-right, lower+eft) in clockwise fashion, `{ (x_a, s_a), (x_a + w_a, s_a), (x_a + w_a, e_a), (x_a, e_a) }`
+* `w_a` is the width value ... the choice of `w` over `y` was a tough one ;)
 
 The width of the entire schedule period is normalized to be `1` so that
 * `0 <= x_a < 1` and `0 < w_a <= 1`
+for each `a` in `A`.
 
-So how do we generate the `x_a` and `w_a` values? We construct a directed acyclic graph (DAG) `G_A` from the sorted input array `S_A`, the traversal lengths of `G_A` produce the `w_a` values, and `x_a` can be computed from summing the `w_a` in the paths.
+The idea being that each appointment `a` can then be placed on the 2-dimensional `(x, y)` plane with the following set of points corresponding to a box that represents each appointment `a` (from upper-left, upper-right, lower-right, lower-left) in clockwise fashion,
+`Box_a = { (x_a, s_a), (x_a + w_a, s_a), (x_a + w_a, e_a), (x_a, e_a) }`
+
+So how do we go about producing `Tiling_A`? The idea is to construct a directed acyclic graph (DAG for short) `DAG_A` and use the set of traversals to find `x_a` and `w_a` for each `a` in `A`.
 
 # The Algorithm
-Step 1: Sort `A` into `S_A`.
+Step 1: Sort `A` into a new array `Sorted_A` by the following rule,
+* `a <= b iff s_a < s_b or (s_a == s_b and e_a >= e_b)` for `a` and `b` in `A`
+This sorting simply means that appointments are sorted in ascending fashion by start time and then in descending fashion by end time should they have equal start times. From now on we'll just assume that `A` is sorted as above so I don't need to keep typing `Sorted_A`.
 
-Step 2: Generate to arrays of paths `F_A` and `B_A` the "front" and "back" arrays respectively for each `a` in `A`. This is done by simply iterating through `S_A` so that `b` is in `F_a` if `s_b < e_a` (and `b` appears after `a` in the sort order), and `b` is in `B_a` if `e_b > s_a`. Pictorially below,
+Pictorally (Diagram 1) of this would resemble the following,
 
     +---------+
-    |    1    |
-    |         +----------+
-    |         |     2    |
-    |         |          |
-    |         |          |
-    |         |          |
-    +---------+----------+----------+
-                         |     3    |
-                         |          |
-                         |          +----------+
-                         |          |     4    |
-                         |          |          |
-                         +----------+          +----------+
-                                    |          |     5    |
-                                    +----------+          +----------+
-                                               |          |     6    +----------+
-                                               +----------+          |     7    |
-                                                          |          |          |
-                                                          +----------+          |
-                                                                     |          |
-                                                                     +----------+
+    |    0    |
+    |         +---------+
+    |         |    1    +---------+
+    |         |         |    2    |
+    |         |         |         |
+    |         |         |         |
+    |         +---------+         +---------+
+    |         |         |         |    3    |
+    |         |         |         |         |
+    |         |         +---------+         +---------+
+    +---------+                   |         |    4    |
+                                  |         |         |
+                                  +---------+         +---------+
+                                            |         |    5    |
+                                            +---------+         +---------+
+                                                      |         |    6    +---------+---------+
+                                                      +---------+         |    7    |    8    |
+                                                                |         |         |         |
+                                                                +---------+         |         |
+                                                                          |         |         |
+                                                                          +---------+---------+
                                                                      
-So `B_1 = {}, B_2 = {1}, B_3 = {}, B_4 = {3}, B_5 = {4}, B_6 = {5}, B_7 = {5, 6}` and `F_1 = {2}, F_2 = {}, F_3 = {4}, F_4 = {5}, F_5 = {6, 7}, F_6 = {7}, F_7 = {}`.
+Step 2: For each `a` in `A` build 2 arrays called `Back_a` and `Front_a` by the following rules,
+* `b` in `Back_a` iff `b` comes before `a` in the sort order and `e_b > s_a`
+* `b` in `Front_a` iff `b` comes after `a` in the sort order and `s_b < e_a`
 
-Step 3: Generate the a arrays of paths, `tB_A` for each `a`, where `tB_A` is the "transformed back" of each appointment `a`, essentially these are all the appointments that come before `a` in the sorting that "block" `a` from being moved farthest to the left. So for `a` let `tB_a` be the already sorted array of appointments `b` where `s_b < e_a`. Then `tB_A` is the array of all `tB_a` which retains the sorted order of `S_A`. This is easy to visualize pictorially below,
+Intuitively `Back_a` contains all the appointments which 'collide' with `a` and come before `a` in the sort order and `Front_a` contains all the appointments which 'collide' with `a` and appear after `a` in the sort order. Now let `Back_A` be the array of all the `Back_a` and have it share the same sort order as `A` (this requires no extra computational time since they can be built in a way which respects this sorting). Similarly let `Front_A` be the array of all `Front_a` and have it also share the same sort order as `A` and `Back_A` (again, with no extra time wasted sorting).
+
+Use the diagram above, this would produce the following arrays,
+
+* `Back_A = [[], [0], [0, 1], [0, 2], [0, 3], [4], [5], [5, 6]. [5, 6, 7]`
+* `Front_A = [[1, 2, 3, 4], [2], [3], [4], [5], [6, 7, 8], [7, 8], [8], []]`
+
+Step 3: Transform each of the `Back_a` arrays into a new array `TransformedBack_a` or `TBack_a` for short in the following way,
+* `b` in `TBack_a` iff `b` in `Back_a` and there exists `d` in `Back_a` and `c` not in `Back_a` with `b < d < c < a` in the sort order.
+
+Then let `TBack_A` be the array of all `TBack_a` sharing the same sort order as `A` (again, we can do this while respecting the sort order).
+
+Pictorally (Diagram 2) resembles the following,
 
     +---------+
-    |    1    |
-    |         +----------+
-    |         |     2    |
-    |         |          |
-    |         |          |
-    |         |          |
-    +---------+----------+
-    |    3    |
-    |         |
-    |         +----------+
-    |         |     4    |
-    |         |          |
-    +---------+          |
-    |    5    |          |
-    |         +----------+
-    |         |     6    +----------+
-    +---------+          |     7    |
-              |          |          |
-              +----------+          |
-                         |          |
-                         +----------+
-          
-So `tB_1 = {}, tB_2 = {1}, tB_3 = {}, tB_4 = {3}, tB_5 = {}, tB_6 = {5} and tB_7 = {5, 6}`.
+    |    0    |
+    |         +---------+
+    |         |    1    +---------+
+    |         |         |    2    |
+    |         |         |         |
+    |         |         |         |
+    |         +---------+         |
+    |         |    3    |         |
+    |         |         |         |
+    |         |         +---------+
+    +---------+         |    4    |
+              |         |         |
+    +---------+---------+         |
+    |    5    |         |         |
+    |         +---------+---------+
+    |         |    6    +---------+---------+
+    +---------+         |    7    |    8    |
+              |         |         |         |
+              +---------+         |         |
+                        |         |         |
+                        +---------+---------+
 
-Step 4: Generate a array of paths, `tF_A` for each `a` where `tF_A` is the "transformed front" of each appointment `a`, essentially these are the all appointments that come "after" `a` and "block" it from moving to the right. This array is slightly more complicated to describe mathematically because it completely depends on the way `tB_A` is computed, if you look below you'll see that they might defy intuition slightly.
+Using the diagram above, this would produce the following array
 
-Essentially we start by taking the "first" appointment `b` which prevents `a` from being moved to the right, and then iteratively build the rest of the array by adding the appointments in `tF_b` to `tF_a`. This means that the `tF_*` arrays will have the form {`b`} concatenated `tF_b` (if such a `b` exists, otherwise it will be `{}`). Fortunately the process to generate `tF_A` is still an iterative process and does not significantly impact the runtime. The logic to determine the "first" such appointment `b` is rather involved, there are 4 cases that can happen,
+*`TBack_A = [[], [0], [0, 1], [0], [0, 3], [], [5], [5, 6], [5, 6, 7]]`
 
-Case 1: `tB_a` is maximal in size (i.e. `tB_A == B_A`) and there's another appointment `b` where `a` is in `tB_b`, and `#(t_Bb) > #(t_Ba)`, then `b` is the first element of `t_Fa` (Note that `#()` simply evaluates the length of the array).
+Step 4: Transform each of the `Front_a` arrays in a new array `TransformedFront_a` or `TFront_a` for short in the following way,
+* If `TBack_a` is maximal (i.e. `TBack_a == Back_a`) then `Front_a` is not empty with `b` in `Front_a` such that the `TBack_b` has greater length than `TBack_a` then `b` is the first entry of the array `TFront_a`
+* If `TBack_a` is not maximal, then we need to check both `Back_a` and `Front_a` for possible candidates to be the first entry of `TFront_a` (note that `TBack_a` and `TFront_a` will never share common values). This creates some subcases,
+  * For each `b` in `Back_a` where `b` is not in `TBack_a` we must do the following, 
+    1. Initialize a value called `minTFront` with `null`.
+    3. Expand `TFront_b`, this is done by taking the first entry `c` of `TFront_b` (calculated in the previous step) and then appending the first entry `d` of `TFront_c` to `Front_b` and so on. (Intuitively this is just taking the next value blocking the `c` and building the path out)
+    3. Set `minTFront = minTFront || b`
+    4. If `minTFront != b` and either
+        1. `minTFront` appears in `TFront_b` OR
+        2. `TBack_minTFront` is non-empty with a last value `c` and `c` is in `TFront_b` (`c` can be thought of as the linchpin, it blocks BOTH `b` and `a` in some sense).
+    5. Return `minTFront` as the minimal possible candidate for the first value in `TFront_a`.
+    6. If `Front_a` is non-empty with `c` in `Front_a` and `minTFront` is in `Back_c` then
+      * If `TBack_c` has length less than `TBack_a`, set `minTFront` as the first value in `TFront_a`.
+      * Else set `c` as the first value of `TFront_a`.
+    7. Else set `minTFront` as the first value of `TFront_a`.
+  * Expand all the `TFront` arrays that were not expanded as part of the previous process.
 
-The remaining 3 cases will come in a future edit, they are a bit more involved.
+I know this process seems complicated and is a bit hard to follow, but it's not computationally difficult and it can be optimized to run iteratively without any issue (see the exact code for confirmation, no recurssion is necessary).
 
-So `tF_1 = {2}, tB_2 = {}, tB_3 = {4}, tB_4 = {}, tB_5 = {4}, tB_6 = {7} and tB_7 = {}`.
+Using (Diagram 2) as a reference we'd get,
 
-Step 5: Now we have the DAG `G_A`, just separated into the appointments before a given appointment and the appoints after a given appointment. So from the above picture the graph `G_A` would look like,
+* `TFront_A = [[1, 2], [2], [], [2], [], [4], [7], [8], []]`
 
-     1  --->  2  
+Step 5: Now we have the graph `DAG_A`, however it is conveniently separated into the traversals,
+* `Traversal_a = TBack_a + [a] + TFront_a`
 
+So that `DAG_A == Traversal_A` if we continue the abuse of notation I incited since the beginning.
+
+Pictorally (Diagram 3) gives us the following,
+
+     0 ---> 1  --->  2  
+     |
+     |
+     |
+     v
      3  --->  4 
               ^
-       _______|
-      /
-     5  --->  6  --->  7 
+              |
+              |
+              |
+              5  --->  6  --->  7 ---> 8
+     
+Note that Step 5 is actually not a step, it's really more of a consideration, because we really don't care about `DAG_A`, just the traversals (Philosophically speaking I guess this means we do care about `DAG_A` though).
 
-To calculate the widths `w_a` we set `w_a = 1` for all `a` in `S_A` then we iterate through the sorted array `S_A` and take `w_a = 1 / (SUM(w_tB_a) + SUM(w_tF_a) + 1)`
+Step 6: Time to calculate the `w_a` values for each `a` in `A`. This is done in the following way,
+* First set `w_a = 1` for all `a` in `A`
+* Iterate through `A` using the sort order
+    1. If `TBack_a` is empty then set `w_b = 1 / Length(Traversal_A)` for all `b` in `Traversal_A` (note this includes `w_a`).
+    2. Find `Traversal_b` which includes `a` and is the traversal with the longest length then
+        * Set `width = SUM w_c` where `c` in `Traversal_b` and `c < 1`
+        * Set `unset = SUM w_c` where `c` in `Traversal_b` and `c == 1`
+        * `w_a = (1 - width / unset)
 
-(Note here, the `1` in the denominator of the equation comes from `a` itself)
+Using Diagram 2 as a reference this would produce the following widths,
+* `w_0 = 1/3, w_1 = 1/3, w_2 = 1/3, w_3 = 1/3, w_4 = 1/3, w_5 = 2/3, w_6 = 1/6, w_7 = 1/6, w_8 = 1/6`
 
-Intuitively this is the sum of all the widths in the "transformed" traversal path. So as we get further into the sorting more of the `w_a` have assigned values that are not 1. This allows the earlier appointments to get precedence in how their widths are set and subsequently influence later appointments into fitting into the more confined spaces. Thus it's easy to see that,
+Step 6: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `TBack_a`.
 
-`w_1 = 1/2, w_2 = 1/2, w_3 = 1/2, w_4 = 1/2, w_5 = 1/2, w_6 = 1/4 and w_6 = 1/4`
+Pictorally (Diagram 4) shows the final result of the algorithm.
 
-Step 6: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `tB_a`. This gives us the final picture,
+    +-----------+
+    |     0     |
+    |           +-----------+
+    |           |     1     +-----------+
+    |           |           |     2     |
+    |           |           |           |
+    |           |           |           |
+    |           +-----------+           |
+    |           |     3     |           |
+    |           |           |           |
+    |           |           +-----------+
+    +-----------+           |     4     |
+                |           |           |
+    +-----------+-----------+           |
+    |           5           |           |
+    |                       +---+-------+
+    |                       | 6 +---+---+
+    +-----------------------+   | 7 | 8 |
+                            |   |   |   |
+                            +---+   |   |
+                                |   |   |
+                                +---+---+
 
-    +-------+
-    |   1   |
-    |       +-------+
-    |       |   2   |
-    |       |       |
-    |       |       |
-    |       |       |
-    +-------+-------+
-    |   3   |
-    |       |
-    |       +-------+
-    |       |   4   |
-    |       |       |
-    +-------+       |
-    |   5   |       |
-    |       +---+---+
-    |       | 6 +---+
-    +-------+   | 7 |
-            |   |   |
-            +---+   |
-                |   |
-                +---+
-
-And that's it! Not too hard thanks to the sorting of `S_A` and the nice properties of the DAG `G_A`.
+And that's it! Not too hard thanks to the sorting on `A` and the nice properties of the DAG `G_A`.
 
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
