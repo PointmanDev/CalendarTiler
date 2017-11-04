@@ -155,7 +155,6 @@ class CalendarTiler {
     
     buildTFront() {
         let i,
-            j,
             next;
         
         for (i = 0; i < this.tiling.tFront.length; ++i) {
@@ -164,7 +163,7 @@ class CalendarTiler {
                     this.tiling.tFront[i].push(this.tiling.front[i][0]);
                 }
             } else {
-                next = next || this.findNextTFrontFromBack(i, tiling);
+                next = next || this.findNextTFrontFromBack(i, this.tiling);
                 
                 if (this.tiling.front[i].length > 0 && this.getFirstIndexOf(next, this.tiling.back[this.tiling.front[i][0]]) > -1) {
                     if (this.tiling.tBack[this.tiling.front[i][0]].length < this.tiling.tBack[i].length) {
@@ -185,7 +184,6 @@ class CalendarTiler {
     
     findNextTFrontFromBack(index) {
         let i,
-            j,
             back,
             minFront;
         
@@ -205,8 +203,7 @@ class CalendarTiler {
     }
 
     sharesLinchPin(minFront, index) {
-        let j,
-            tBack = this.tiling.tBack[minFront],
+        let tBack = this.tiling.tBack[minFront],
             linchPin = tBack[tBack.length - 1];
         
         if (linchPin && this.getFirstIndexOf(linchPin, this.tiling.tFront[index]) > -1) {
@@ -232,8 +229,7 @@ class CalendarTiler {
     }
     
     expandRemainingTFront() {
-        let i,
-            next;
+        let i;
         
         for (i = 0; i < this.tiling.tFront.length; ++i) {
             this.expandTFront(i);
