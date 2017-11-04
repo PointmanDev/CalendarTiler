@@ -109,8 +109,8 @@ Step 4: Transform each of the `Front_a` arrays in a new array `TransformedFront_
         2. `TBack_minTFront` is non-empty with a last value `c` and `c` is in `TFront_b` (`c` can be thought of as the linchpin, it blocks BOTH `b` and `a` in some sense).
     5. Return `minTFront` as the minimal possible candidate for the first value in `TFront_a`.
     6. If `Front_a` is non-empty with `c` in `Front_a` and `minTFront` is in `Back_c` then
-      * If `TBack_c` has length less than `TBack_a`, set `minTFront` as the first value in `TFront_a`.
-      * Else set `c` as the first value of `TFront_a`.
+        * If `TBack_c` has length less than `TBack_a`, set `minTFront` as the first value in `TFront_a`.
+        * Else set `c` as the first value of `TFront_a`.
     7. Else set `minTFront` as the first value of `TFront_a`.
   * Expand all the `TFront` arrays that were not expanded as part of the previous process.
 
