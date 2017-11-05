@@ -27,7 +27,7 @@ Step 1: Sort `A` into a new array `Sorted_A` by the following rule,
 * `a <= b iff s_a < s_b or (s_a == s_b and e_a >= e_b)` for `a` and `b` in `A`
 This sorting simply means that appointments are sorted in ascending fashion by start time and then in descending fashion by end time should they have equal start times. From now on we'll just assume that `A` is sorted as above so I don't need to keep typing `Sorted_A`.
 
-Pictorally (Diagram 1) of this would resemble the following,
+Pictorally (Diagram 1) this would resemble the following,
 
     +---------+
     |    0    |
@@ -112,7 +112,7 @@ Step 4: Transform each of the `Front_a` arrays in a new array `TransformedFront_
         * If `TBack_c` has length less than `TBack_a`, set `minTFront` as the first value in `TFront_a`.
         * Else set `c` as the first value of `TFront_a`.
     7. Else set `minTFront` as the first value of `TFront_a`.
-  * Expand all the `TFront` arrays that were not expanded as part of the previous process.
+* Expand all the `TFront` arrays that were not expanded as part of the previous process.
 
 I know this process seems complicated and is a bit hard to follow, but it's not computationally difficult and it can be optimized to run iteratively without any issue (see the exact code for confirmation, no recurssion is necessary).
 
@@ -151,7 +151,7 @@ Step 6: Time to calculate the `w_a` values for each `a` in `A`. This is done in 
         * `w_a = (1 - width / unset)
 
 Using Diagram 2 as a reference this would produce the following widths,
-* `w_0 = 1/3, w_1 = 1/3, w_2 = 1/3, w_3 = 1/3, w_4 = 1/3, w_5 = 2/3, w_6 = 1/6, w_7 = 1/6, w_8 = 1/6`
+* `w_0 = 1/3, w_1 = 1/3, w_2 = 1/3, w_3 = 1/3, w_4 = 1/3, w_5 = 2/3, w_6 = 1/9, w_7 = 1/9, w_8 = 1/9`
 
 Step 6: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `TBack_a`.
 
