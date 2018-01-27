@@ -16,7 +16,7 @@
         sortAppointments = function CalendarTiler_sortAppointments(a, b) {
             return a.start - b.start || b.end - a.end;
         },
-        getTail = function CalendarTilter_getTail(head, array) {
+        getTail = function CalendarTiler_getTail(head, array) {
             var i;
 
             for (i = head + 1; i < array.length; ++i) {
@@ -27,7 +27,7 @@
 
             return array.length;
         },
-        getFirstIndexOf = function CalendarTilter_getFirstIndexOf(val, array) {
+        getFirstIndexOf = function CalendarTiler_getFirstIndexOf(val, array) {
             var i;
 
             for (i = 0; i < array.length; ++i) {
@@ -38,7 +38,7 @@
 
             return -1;
         },
-        fillArrayWithInitialValues = function CalendarTilter_fillArrayWithInitialValues(numberOfAppointments, initialValue) {
+        fillArrayWithInitialValues = function CalendarTiler_fillArrayWithInitialValues(numberOfAppointments, initialValue) {
             var i,
                 array = [];
 
@@ -48,24 +48,24 @@
 
             return array;
         },
-        mapTileParameters = function CalendarTilter_mapTileParameters(tileParametersIn) {
+        mapTileParameters = function CalendarTiler_mapTileParameters(tileParametersIn) {
             var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {},
-                usesDuration = isString(tileParameters.duration);
+                usesDuration = tileParameters.delineator === 'duration';
 
             return {
                 usesDuration: usesDuration,
                 start: isString(tileParameters.start) ? tileParameters.start : 'start',
-                delineator: usesDuration ? tileParameters.duration : (isString(tileParameters.end) ? tileParameters.end : 'end')
+                delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
             };
         },
-        getAppointmentEnd = function CalendarTilter_getAppointmentEnd(appointment, tileParameters) {
+        getAppointmentEnd = function CalendarTiler_getAppointmentEnd(appointment, tileParameters) {
             if (tileParameters.usesDuration) {
                 return (appointment[tileParameters.start] || fallbackStart) + (appointment[tileParameters.delineator] || fallbackDurationOrEnd);
             }
 
             return appointment[tileParameters.delineator] || fallbackDurationOrEnd;
         },
-        copyRelevantAppointmentData = function CalendarTilter_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
+        copyRelevantAppointmentData = function CalendarTiler_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
             var i,
                 appointments = [];
 
@@ -79,7 +79,7 @@
 
             return appointments.sort(sortAppointments);
         },
-        constructDagTraversals = function CalendarTilter_constructDagTraversals(tiling) {
+        constructDagTraversals = function CalendarTiler_constructDagTraversals(tiling) {
             var i,
                 traversal,
                 traversalKey,
@@ -102,7 +102,7 @@
 
             return traversals;
         },
-        calculateWidthsAndPositions = function CalendarTilter_calculateWidthsAndPositions(tiling) {
+        calculateWidthsAndPositions = function CalendarTiler_calculateWidthsAndPositions(tiling) {
             var i,
                 j,
                 k,
@@ -139,7 +139,7 @@
 
             return tiling;
         },
-        expandRFront = function CalendarTilter_expandRFront(index, tiling) {
+        expandRFront = function CalendarTiler_expandRFront(index, tiling) {
             if (tiling.rFront[index].length === 1) {
                 var next = tiling.rFront[tiling.rFront[index][0]][0];
 
@@ -153,16 +153,16 @@
                 }
             }
         },
-        expandRemainingRFront = function CalendarTilter_expandRemainingRFront(tiling) {
+        expandRemainingRFront = function CalendarTiler_expandRemainingRFront(tiling) {
             var i;
 
             for (i = 0; i < tiling.rFront.length; ++i) {
                 expandRFront(i, tiling);
             }
 
-            calculateWidthsAndPositions();
+            calculateWidthsAndPositions(tiling);
         },
-        sharesLinchPin = function CalendarTilter_sharesLinchPin(minFront, index, tiling) {
+        sharesLinchPin = function CalendarTiler_sharesLinchPin(minFront, index, tiling) {
             var rBack = tiling.rBack[minFront],
                 linchPin = rBack[rBack.length - 1];
 
@@ -172,7 +172,7 @@
 
             return false;
         },
-        findNextRFrontFromBack = function CalendarTilter_findNextRFrontFromBack(index, tiling) {
+        findNextRFrontFromBack = function CalendarTiler_findNextRFrontFromBack(index, tiling) {
             var i,
                 back,
                 minFront;
@@ -192,7 +192,7 @@
 
             return minFront;
         },
-        buildRFront = function CalendarTilter_buildRFront(tiling) {
+        buildRFront = function CalendarTiler_buildRFront(tiling) {
             var i,
                 next;
 
@@ -220,7 +220,7 @@
 
             expandRemainingRFront(tiling);
         },
-        buildRBack = function CalendarTilter_buildRBack(tiling) {
+        buildRBack = function CalendarTiler_buildRBack(tiling) {
             var next,
                 head,
                 tail,
@@ -238,9 +238,9 @@
                 }
             }
 
-            buildRFront();
+            buildRFront(tiling);
         },
-        generateTilingObject = function CalendarTilter_generateTilingObject(appointments) {
+        generateTilingObject = function CalendarTiler_generateTilingObject(appointments) {
             var numberOfAppointments = appointments.length;
 
             return {
@@ -252,7 +252,7 @@
                 x: fillArrayWithInitialValues(numberOfAppointments, 0)
             };
         },
-        mapWidthsAndPositionsToOriginalAppointmentsOrder = function CalendarTilter_mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments) {
+        mapWidthsAndPositionsToOriginalAppointmentsOrder = function CalendarTiler_mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments) {
             var i,
                 dx = new Array(appointments.length),
                 x = new Array(appointments.length);
@@ -267,7 +267,7 @@
                 dx: dx
             };
         },
-        tileAppointments = function CalendarTilter_tileAppointments(appointmentsIn, tileParameters) {
+        tileAppointments = function CalendarTiler_tileAppointments(appointmentsIn, tileParameters) {
             var j,
                 k,
                 appointments = copyRelevantAppointmentData(appointmentsIn, tileParameters),
@@ -294,7 +294,7 @@
             return mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments);
         },
         calendarTiler = {
-            tileAppointments: function CalendarTilter_initialize(appointmentsIn, tileParametersIn) {
+            tileAppointments: function CalendarTiler_initialize(appointmentsIn, tileParametersIn) {
                 if (!Array.isArray(appointmentsIn)) {
                     throw 'calendarTiler.tileAppointments - 1st argument - appointmentsIn: expects an array.';
                 }

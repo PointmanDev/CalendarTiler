@@ -2,7 +2,7 @@
 An algorithm for aesthetically displaying appointments/events on a calendar, currently implemented in JS (more languages to come).
 
 # Why?
-At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this method and implemented it in JS (my desk was covered in scratch pad paper with little boxes drawn all over them for about 2 weeks, fun times).
+At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this algorithm and implemented it in JS (my desk was covered in scratch pad paper with little boxes drawn all over them for about 2 weeks, fun times).
 
 # How?
 The algorithm works by accepting an array of appointments `A` as an input, where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` and `e_a` can be any real valued numbers with `s_a < e_a` (however `0 < s_a < e_a <= 24` is a typical use case).
@@ -63,10 +63,10 @@ Use the diagram above, this would produce the following arrays,
 * `Back_A = [[], [0], [0, 1], [0, 2], [0, 3], [4], [5], [5, 6]. [5, 6, 7]`
 * `Front_A = [[1, 2, 3, 4], [2], [3], [4], [5], [6, 7, 8], [7, 8], [8], []]`
 
-Step 3: Transform each of the `Back_a` arrays into a new array `TransformedBack_a` or `TBack_a` for short in the following way,
-* `b` in `TBack_a` iff `b` in `Back_a` and there exists `d` in `Back_a` and `c` not in `Back_a` with `b < d < c < a` in the sort order.
+Step 3: Reduce each of the `Back_a` arrays into a new array `ReduceedBack_a` or `RBack_a` for short in the following way,
+* `b` in `RBack_a` iff `b` in `Back_a` and there exists `d` in `Back_a` and `c` not in `Back_a` with `b < d < c < a` in the sort order.
 
-Then let `TBack_A` be the array of all `TBack_a` sharing the same sort order as `A` (again, we can do this while respecting the sort order).
+Then let `RBack_A` be the array of all `RBack_a` sharing the same sort order as `A` (again, we can do this while respecting the sort order).
 
 Pictorally (Diagram 2) resembles the following,
 
@@ -95,33 +95,33 @@ Pictorally (Diagram 2) resembles the following,
 
 Using the diagram above, this would produce the following array
 
-*`TBack_A = [[], [0], [0, 1], [0], [0, 3], [], [5], [5, 6], [5, 6, 7]]`
+*`RBack_A = [[], [0], [0, 1], [0], [0, 3], [], [5], [5, 6], [5, 6, 7]]`
 
-Step 4: Transform each of the `Front_a` arrays in a new array `TransformedFront_a` or `TFront_a` for short in the following way,
-* If `TBack_a` is maximal (i.e. `TBack_a == Back_a`) then `Front_a` is not empty with `b` in `Front_a` such that the `TBack_b` has greater length than `TBack_a` then `b` is the first entry of the array `TFront_a`
-* If `TBack_a` is not maximal, then we need to check both `Back_a` and `Front_a` for possible candidates to be the first entry of `TFront_a` (note that `TBack_a` and `TFront_a` will never share common values). This creates some subcases,
-  * For each `b` in `Back_a` where `b` is not in `TBack_a` we must do the following, 
-    1. Initialize a value called `minTFront` with `null`.
-    3. Expand `TFront_b`, this is done by taking the first entry `c` of `TFront_b` (calculated in the previous step) and then appending the first entry `d` of `TFront_c` to `Front_b` and so on. (Intuitively this is just taking the next value blocking the `c` and building the path out)
-    3. Set `minTFront = minTFront || b`
-    4. If `minTFront != b` and either
-        1. `minTFront` appears in `TFront_b` OR
-        2. `TBack_minTFront` is non-empty with a last value `c` and `c` is in `TFront_b` (`c` can be thought of as the linchpin, it blocks BOTH `b` and `a` in some sense).
-    5. Return `minTFront` as the minimal possible candidate for the first value in `TFront_a`.
-    6. If `Front_a` is non-empty with `c` in `Front_a` and `minTFront` is in `Back_c` then
-        * If `TBack_c` has length less than `TBack_a`, set `minTFront` as the first value in `TFront_a`.
-        * Else set `c` as the first value of `TFront_a`.
-    7. Else set `minTFront` as the first value of `TFront_a`.
-* Expand all the `TFront` arrays that were not expanded as part of the previous process.
+Step 4: Reduce each of the `Front_a` arrays in a new array `ReduceedFront_a` or `RFront_a` for short in the following way,
+* If `RBack_a` is maximal (i.e. `RBack_a == Back_a`) then `Front_a` is not empty with `b` in `Front_a` such that the `RBack_b` has greater length than `RBack_a` then `b` is the first entry of the array `RFront_a`
+* If `RBack_a` is not maximal, then we need to check both `Back_a` and `Front_a` for possible candidates to be the first entry of `RFront_a` (note that `RBack_a` and `RFront_a` will never share common values). This creates some subcases,
+  * For each `b` in `Back_a` where `b` is not in `RBack_a` we must do the following, 
+    1. Initialize a value called `minRFront` with `null`.
+    3. Expand `RFront_b`, this is done by taking the first entry `c` of `RFront_b` (calculated in the previous step) and then appending the first entry `d` of `RFront_c` to `Front_b` and so on. (Intuitively this is just taking the next value blocking the `c` and building the path out)
+    3. Set `minRFront = minRFront || b`
+    4. If `minRFront != b` and either
+        1. `minRFront` appears in `RFront_b` OR
+        2. `RBack_minRFront` is non-empty with a last value `c` and `c` is in `RFront_b` (`c` can be thought of as the linchpin, it blocks BOTH `b` and `a` in some sense).
+    5. Return `minRFront` as the minimal possible candidate for the first value in `RFront_a`.
+    6. If `Front_a` is non-empty with `c` in `Front_a` and `minRFront` is in `Back_c` then
+        * If `RBack_c` has length less than `RBack_a`, set `minRFront` as the first value in `RFront_a`.
+        * Else set `c` as the first value of `RFront_a`.
+    7. Else set `minRFront` as the first value of `RFront_a`.
+* Expand all the `RFront` arrays that were not expanded as part of the previous process.
 
 I know this process seems complicated and is a bit hard to follow, but it's not computationally difficult and it can be optimized to run iteratively without any issue (see the exact code for confirmation, no recurssion is necessary).
 
 Using (Diagram 2) as a reference we'd get,
 
-* `TFront_A = [[1, 2], [2], [], [2], [], [4], [7], [8], []]`
+* `RFront_A = [[1, 2], [2], [], [2], [], [4], [7], [8], []]`
 
 Step 5: Now we have the graph `DAG_A`, however it is conveniently separated into the traversals,
-* `Traversal_a = TBack_a + [a] + TFront_a`
+* `Traversal_a = RBack_a + [a] + RFront_a`
 
 So that `DAG_A == Traversal_A` if we continue the abuse of notation I incited since the beginning.
 
@@ -139,50 +139,48 @@ Pictorally (Diagram 3) gives us the following,
               |
               5  --->  6  --->  7 ---> 8
      
-Note that Step 5 is actually not a step, it's really more of a consideration, because we really don't care about `DAG_A`, just the traversals (Philosophically speaking I guess this means we do care about `DAG_A` though).
+Note that Step 5 is actually not a step, it's really more of a consideration, because we don't really do anything with `DAG_A`, we just need the traversals.
 
-Step 6: Time to calculate the `w_a` values for each `a` in `A`. This is done in the following way,
-* First set `w_a = 1` for all `a` in `A`
-* Iterate through `A` using the sort order
-    1. If `TBack_a` is empty then set `w_b = 1 / Length(Traversal_a)` for all `b` in `Traversal_a` (note this includes `w_a`).
-    2. Find `Traversal_b` which includes `a` and is the traversal with the longest length then
-        * Set `width = SUM w_c` where `c` in `Traversal_b` and `c < 1`
-        * Set `unset = SUM w_c` where `c` in `Traversal_b` and `c == 1`
-        * `w_a = (1 - width / unset)
+Step 6: Time to calculate the `w_a` and `x_a` values for each `a` in `A`. This is done in the following way,
+* First set `w_a = 1` and `x_a = 0` for all `a` in `A`
+* Sort the set of traversals `Traversal_A` into `Sorted_Traversal_A` by so the largest traversals come first. And again to save space, let `Traversal_A = Sorted_Traversal_A`.
+* Iterate through each traversal `T_A` in `Traversal_A` using the aformentioned sort order,
+    1. Initialize a variable `totalTraversalWidth = 0` which keeps track of how wide `T_A` is from the starting appointment.
+    2. For each appointment `a_t` in `T_A` calculate `width` and `unset`
+    3. `width` is the sum of all appointments `a_t` in the traversal where `w_a_t != 1`
+    4. `unset` is the number of traversals `a_t` in the traversal where `w_a_t == 1`
+    5. If `w_a_t == 1` then set `w_a_t = (1 - width) / Max(unset, 1)` and set `x_a_t = totalTraversalWidth`
+    6. Add `w_a_t` to `totalTraversalWidth`
 
-Using Diagram 2 as a reference this would produce the following widths,
-* `w_0 = 1/3, w_1 = 1/3, w_2 = 1/3, w_3 = 1/3, w_4 = 1/3, w_5 = 2/3, w_6 = 1/9, w_7 = 1/9, w_8 = 1/9`
-
-Step 6: Finally to determine the `x_a` for each `a` in `A`, `x_a` is simply the sum of all `w_b` for each`b` in `TBack_a`.
+Using Diagram 2 as a reference this would produce the following widths and positions,
+* `w_0 = 1/3, w_1 = 1/3, w_2 = 1/3, w_3 = 1/3, w_4 = 1/3, w_5 = 1/4, w_6 = 1/4, w_7 = 1/4, w_8 = 1/4`
+* `x_0 = 0, x_1 = 1/3, x_2 = 2/3, x_3 = 1/3, x_4 = 2/3, x_5 = 0, x_6 = 1/4, x_7 = 1/2, x_8 = 3/4`
 
 Pictorally (Diagram 4) shows the final result of the algorithm.
 
-    +-----------+
-    |     0     |
-    |           +-----------+
-    |           |     1     +-----------+
-    |           |           |     2     |
-    |           |           |           |
-    |           |           |           |
-    |           +-----------+           |
-    |           |     3     |           |
-    |           |           |           |
-    |           |           +-----------+
-    +-----------+           |     4     |
-                |           |           |
-    +-----------+-----------+           |
-    |           5           |           |
-    |                       +---+-------+
-    |                       | 6 +---+---+
-    +-----------------------+   | 7 | 8 |
-                            |   |   |   |
-                            +---+   |   |
-                                |   |   |
-                                +---+---+
+    +------------+
+    |     0      |
+    |            +------------+
+    |            |     1      +------------+
+    |            |            |     2      |
+    |            |            |            |
+    |            |            |            |
+    |            +------------+            |
+    |            |     3      |            |
+    |            |            |            |
+    |            |            +------------+
+    +------------+            |     4      |
+                 |            |            |
+    +---------+  +------------+            |
+    |    5    |               |            |
+    |         +---------+     +------------+
+    |         |    6    +---------+--------+       
+    +---------+         |    7    |   8    |
+              |         |         |        |
+              +---------+         |        |
+                        |         |        |
+                        +---------+--------+
 
 And that's it! Not too hard thanks to the sorting on `A` and the graph traversals of `DAG_A`.
-
-# Consequences
-Note that this algorithm "prefers" earlier appointments in the sense that later appointments can appear much narrower in certain cases (as seen in Diagram 4). Some trade off needs to be made to determine which appointments "get the shaft" so to speak, since it's not possible to scale them all into the same widths and preserve the aesthetic quality of being able to shove it nicely inside a rectangle.
 
 More to come (namely specific implementation choices), you can examine the code first though if you don't feel like waiting ;)
