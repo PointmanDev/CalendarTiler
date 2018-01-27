@@ -49,11 +49,10 @@
             return array;
         },
         mapTileParameters = function CalendarTiler_mapTileParameters(tileParametersIn) {
-            var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {},
-                usesDuration = tileParameters.delineator === 'duration';
+            var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {};
 
             return {
-                usesDuration: usesDuration,
+                usesDuration: !!tileParametersIn.usesDuration,
                 start: isString(tileParameters.start) ? tileParameters.start : 'start',
                 delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
             };
