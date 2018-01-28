@@ -1,0 +1,26 @@
+html,
+body {
+    display: flex;
+    margin: 0px;
+    height: 100%;
+    min-height: 100%;
+    width: auto;
+    display: flex;
+    min-width: 100%;
+    overflow: hidden;
+}
+
+#example-container {
+    display: flex;
+    flex-direction: row;
+    min-height: fit-content;
+    min-width: fit-content;
+    width: 100%;
+}
+
+#example-schedule,
+#example-work-space {
+    border: 1px solid #000000;
+    display: flex;
+    width: 50%;
+}
