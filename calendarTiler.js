@@ -52,7 +52,7 @@
             var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {};
 
             return {
-                usesDuration: !!tileParametersIn.usesDuration,
+                usesDuration: !!tileParameters.usesDuration,
                 start: isString(tileParameters.start) ? tileParameters.start : 'start',
                 delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
             };
