@@ -14,7 +14,7 @@
         },
         subdivisions = {},
         gradientValues = [],
-        defaultScheduleWidth = 450,
+        scheduleWidth,
         defaultAppointmentHeight = 20,
         appointments,
         numberOfAppointments = 20,
@@ -52,21 +52,33 @@
                 htmlElements.exampleAppointments.removeChild(htmlElements.exampleAppointments.lastChild);
             }
         },
-        renderAppointment = function example_renderAppointment(index, appointments, tiling) {
+        renderAppointment = function example_renderAppointment(index, tiling) {
             var appointment = document.createElement('div');
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index);
             appointment.style.height = (defaultAppointmentHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
             appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * defaultAppointmentHeight) + 'px';
-            appointment.style.width = (Math.floor(defaultScheduleWidth * tiling.dx[index])) + 'px';
-            appointment.style.left = (defaultScheduleWidth * tiling.x[index]) + 'px';
+            appointment.style.width = (Math.floor(scheduleWidth * tiling.dx[index])) + 'px';
+            appointment.style.left = (scheduleWidth * tiling.x[index]) + 'px';
             htmlElements.exampleAppointments.appendChild(appointment);
+        },
+        setScheduleWidth = function example_setAppointmentsWidth() {
+            scheduleWidth = Math.max(window.innerWidth - 100, 500);
+        },
+        drawAppointments = function example_drawAppointments() {
+            var i;
+
+            cleanAppointments();
+            setScheduleWidth();
+
+            for (i = 0; i < numberOfAppointments; ++i) {
+                renderAppointment(i, tiling);
+            }
         },
         generateRandomSchedule = function example_generateRandomSchedule() {
             var i;
 
-            cleanAppointments();
             numberOfAppointments = parseInt(htmlElements.exampleNumberOfAppointmentsInput.value, 10);
             appointments = [];
 
@@ -77,9 +89,7 @@
             tiling = window.calendarTiler.tileAppointments(appointments);
             appointments = tiling.sortedAppointments;
 
-            for (i = 0; i < numberOfAppointments; ++i) {
-                renderAppointment(i, appointments, tiling);
-            }
+            drawAppointments();
         },
         fillGradientValues = function example_fillGradientValues() {
             var i;
@@ -119,6 +129,9 @@
             htmlElements.exampleNumberOfAppointmentsButton.onclick = generateRandomSchedule;
             generateRandomSchedule();
         };
+
+    window.addEventListener('resize', drawAppointments);
+    window.addEventListener('orientationchange', drawAppointments);
 
     initialize();
 }());
