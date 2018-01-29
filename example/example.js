@@ -57,10 +57,10 @@
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index);
-            appointment.style.height = defaultAppointmentHeight * numberOfSubdivisionsPerHour * tiling.dy[index] + 'px';
-            appointment.style.top = tiling.y[index] * defaultAppointmentHeight + 'px';
-            appointment.style.width = Math.floor(defaultScheduleWidth * tiling.dx[index]) + 'px';
-            appointment.style.left = defaultScheduleWidth * tiling.x[index] + 'px';
+            appointment.style.height = (defaultAppointmentHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
+            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * defaultAppointmentHeight) + 'px';
+            appointment.style.width = (Math.floor(defaultScheduleWidth * tiling.dx[index])) + 'px';
+            appointment.style.left = (defaultScheduleWidth * tiling.x[index]) + 'px';
             htmlElements.exampleAppointments.appendChild(appointment);
         },
         generateRandomSchedule = function example_generateRandomSchedule() {
