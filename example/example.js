@@ -7,7 +7,10 @@
         numberOfSubdivisionsPerHour = 4,
         totalNumberOfSubdivisions = hoursPerDay * numberOfSubdivisionsPerHour,
         htmlElements = {
-            exampleTimes: document.getElementById('example-times')
+            exampleTimes: document.getElementById('example-times'),
+            exampleAppointments: document.getElementById('example-appointments'),
+            exampleNumberOfAppointmentsInput: document.getElementById('example-number-of-appointments-input'),
+            exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button')
         },
         subdivisions = {},
         appointments,
@@ -33,19 +36,6 @@
 
             return hour + ':' + subdivisions[miniuteDivision].text;
         },
-        drawExampleTimes = function example_drawExampleTimes() {
-            var i,
-                timeElement;
-
-            generateMinuteDivisions();
-
-            for (i = 0; i < totalNumberOfSubdivisions; ++i) {
-                timeElement = document.createElement('div');
-                timeElement.classList.add('example-time');
-                timeElement.innerHTML = getTimeText(i);
-                htmlElements.exampleTimes.appendChild(timeElement);
-            }
-        },
         generateRandomAppointment = function example_generateRandomAppointment() {
             var startHour = Math.floor(Math.random() * (hoursPerDay - 1)),
                 startMinutes = Math.floor(Math.random() * numberOfSubdivisionsPerHour),
@@ -58,25 +48,39 @@
                 end: end
             };
         },
-        initializeAppointments = function example_fillAppointments() {
+        generateRandomSchedule = function example_generateRandomSchedule() {
             var i;
 
+            numberOfAppointments = parseInt(htmlElements.exampleNumberOfAppointmentsInput.value, 10);
             appointments = [];
 
             for (i = 0; i < numberOfAppointments; ++i) {
                 appointments.push(generateRandomAppointment());
             }
-        },
-        renderAppointmentsToScreen = function example_renderAppointmentsToScreen() {
-            var i;
+
+            tiling = window.calendarTiler.tileAppointments(appointments);
 
             for (i = 0; i < numberOfAppointments; ++i) {
                 console.log(tiling.x[i] + ' - ' + tiling.dx[i]);
             }
+        },
+        initialize = function example_initialize() {
+            var i,
+                timeElement;
+
+            generateMinuteDivisions();
+
+            for (i = 0; i < totalNumberOfSubdivisions; ++i) {
+                timeElement = document.createElement('div');
+                timeElement.classList.add('example-time');
+                timeElement.innerHTML = getTimeText(i);
+                htmlElements.exampleTimes.appendChild(timeElement);
+            }
+
+            htmlElements.exampleNumberOfAppointmentsInput.value = numberOfAppointments;
+            htmlElements.exampleNumberOfAppointmentsButton.onclick = generateRandomSchedule;
+            generateRandomSchedule();
         };
 
-    drawExampleTimes();
-    initializeAppointments();
-    tiling = window.calendarTiler.tileAppointments(appointments);
-    renderAppointmentsToScreen();
+    initialize();
 }());
