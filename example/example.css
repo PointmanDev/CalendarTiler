@@ -37,13 +37,12 @@ body {
 }
 
 .example-time {
-    height: 16px;
+    height: 20px;
     width: 48px;
     border: 1px solid #000000;
-    border-top: none;
+    border-bottom: none;
     border-left: none;
     text-align: center;
-    padding: 2px 0px;
     font-size: 14px;
 }
 
@@ -63,4 +62,12 @@ body {
 
 .appointment-time-interval-first {
     border-top: none !important;
+}
+
+.example-appointment {
+    position: relative;
+    background-color: #ffffff;
+    border: 1px solid #000000;
+    z-index: 5;
+    text-align: center;
 }

@@ -15,6 +15,7 @@
         subdivisions = {},
         gradientValues = [],
         defaultScheduleWidth = 450,
+        defaultAppointmentHeight = 20,
         appointments,
         numberOfAppointments = 20,
         tiling,
@@ -46,9 +47,26 @@
                 end: end
             };
         },
+        cleanAppointments = function example_cleanAppointments() {
+            while (htmlElements.exampleAppointments.children.length > totalNumberOfSubdivisions) {
+                htmlElements.exampleAppointments.removeChild(htmlElements.exampleAppointments.lastChild);
+            }
+        },
+        renderAppointment = function example_renderAppointment(index, appointments, tiling) {
+            var appointment = document.createElement('div');
+
+            appointment.classList.add('example-appointment');
+            appointment.innerHTML = String(index);
+            appointment.style.height = defaultAppointmentHeight * numberOfSubdivisionsPerHour * (appointments[index].end - appointments[index].start) + 'px';
+            appointment.style.top = appointments[index].start * defaultAppointmentHeight + 'px';
+            appointment.style.width = Math.floor(defaultScheduleWidth * tiling.dx[index]) + 'px';
+            appointment.style.left = defaultScheduleWidth * tiling.x[index] + 'px';
+            htmlElements.exampleAppointments.appendChild(appointment);
+        },
         generateRandomSchedule = function example_generateRandomSchedule() {
             var i;
 
+            cleanAppointments();
             numberOfAppointments = parseInt(htmlElements.exampleNumberOfAppointmentsInput.value, 10);
             appointments = [];
 
@@ -59,7 +77,7 @@
             tiling = window.calendarTiler.tileAppointments(appointments);
 
             for (i = 0; i < numberOfAppointments; ++i) {
-                console.log(tiling.x[i] + ' - ' + tiling.dx[i]);
+                renderAppointment(i, appointments, tiling);
             }
         },
         fillGradientValues = function example_fillGradientValues() {
