@@ -13,28 +13,26 @@
             exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button')
         },
         subdivisions = {},
+        gradientValues = [],
+        defaultScheduleWidth = 450,
         appointments,
         numberOfAppointments = 20,
         tiling,
-        generateMinuteDivisions = function example_generateMinuteDivisions() {
+        generateSubdivisions = function example_generateSubdivisions() {
             var i,
                 minutes,
                 minutesPerMinuteDivision = minutesPerHour / numberOfSubdivisionsPerHour;
 
             for (i = 0; i < numberOfSubdivisionsPerHour; ++i) {
                 minutes = minutesPerMinuteDivision * i;
-
-                subdivisions[i] = {
-                    text: String((minutes < 10 ? '0' : '') + minutes),
-                    value: minutes
-                };
+                subdivisions[i] = String((minutes < 10 ? '0' : '') + minutes);
             }
         },
         getTimeText = function example_getTimeText(timeElementIndex) {
             var miniuteDivision = timeElementIndex % 4,
                 hour = Math.floor(timeElementIndex / 4);
 
-            return hour + ':' + subdivisions[miniuteDivision].text;
+            return (hour < 10 ? '0' : '') + hour + ':' + subdivisions[miniuteDivision];
         },
         generateRandomAppointment = function example_generateRandomAppointment() {
             var startHour = Math.floor(Math.random() * (hoursPerDay - 1)),
@@ -64,17 +62,38 @@
                 console.log(tiling.x[i] + ' - ' + tiling.dx[i]);
             }
         },
+        fillGradientValues = function example_fillGradientValues() {
+            var i;
+            for (i = 0; i < numberOfSubdivisionsPerHour; ++i) {
+                gradientValues[i] = '#' + (i % 2 === 0 ? 'ffffff' : 'f2f2f2');
+            }
+        },
         initialize = function example_initialize() {
             var i,
-                timeElement;
+                subdivisionIndex,
+                timeElement,
+                appointmntInvervalElement;
 
-            generateMinuteDivisions();
+            generateSubdivisions();
+            fillGradientValues();
 
             for (i = 0; i < totalNumberOfSubdivisions; ++i) {
+                subdivisionIndex = i % 4;
                 timeElement = document.createElement('div');
                 timeElement.classList.add('example-time');
                 timeElement.innerHTML = getTimeText(i);
+                timeElement.style.backgroundColor = gradientValues[subdivisionIndex];
                 htmlElements.exampleTimes.appendChild(timeElement);
+
+                appointmntInvervalElement = document.createElement('div');
+                appointmntInvervalElement.classList.add(subdivisionIndex === 0 ? 'appointment-time' : 'appointment-time-interval');
+                appointmntInvervalElement.style.backgroundColor = gradientValues[subdivisionIndex];
+                htmlElements.exampleAppointments.appendChild(appointmntInvervalElement);
+
+                if (i === 0) {
+                    timeElement.classList.add('example-time-first');
+                    appointmntInvervalElement.classList.add('appointment-time-interval-first');
+                }
             }
 
             htmlElements.exampleNumberOfAppointmentsInput.value = numberOfAppointments;

@@ -1,36 +1,66 @@
 html,
 body {
-    display: flex;
-    margin: 0px;
     height: 100%;
-    min-height: 100%;
-    width: auto;
-    display: flex;
-    min-width: 100%;
+    width: 100%;
     overflow: hidden;
 }
 
 #example-container {
-    display: flex;
-    flex-direction: row;
     height: 100%;
-    display: flex;
     width: 100%;
 }
 
-#example-schedule,
-#example-work-space {
+#example-schedule {
     border: 1px solid #000000;
-    display: flex;
-    width: 50%;
     overflow-y: auto;
+    display: inline-block;
+    overflow-x: hidden;
+}
+
+#example-schedule {
+    height: calc(100% - 70px);
+    margin-left: 10px;
+}
+
+#example-work-space {
+    padding: 10px;
+}
+
+#example-times {
+    float: left;
+}
+
+#example-appointments {
+    width: 450px;
+    float: right;
+    overflow-x: auto;
 }
 
 .example-time {
     height: 16px;
     width: 48px;
     border: 1px solid #000000;
+    border-top: none;
+    border-left: none;
     text-align: center;
     padding: 2px 0px;
     font-size: 14px;
+}
+
+.example-time-first {
+    border-top: none !important;
+}
+
+.appointment-time {
+    height: 20px;
+    border-top: 1px solid #000000;
+}
+
+.appointment-time-interval {
+    height: 20px;
+    border-top: 1px dotted #000000;
+}
+
+.appointment-time-interval-first {
+    border-top: none !important;
 }

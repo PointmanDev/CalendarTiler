@@ -4,6 +4,9 @@
 
     var fallbackStart = 0,
         fallbackDurationOrEnd = 1,
+        unsetRBackMarker = -1,
+        unsetDx = 1,
+        unsetX = 0,
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -127,7 +130,7 @@
                         }
                     }
 
-                    if (tiling.dx[traversal[j]] === 1) {
+                    if (tiling.dx[traversal[j]] === unsetDx) {
                         tiling.dx[traversal[j]] = (1 - width) / (unset || 1);
                         tiling.x[traversal[j]] = totalTraversalWidth;
                     }
@@ -225,7 +228,7 @@
                 tail,
                 path;
 
-            while (getFirstIndexOf(-1, tiling.rBack) > -1) {
+            while (getFirstIndexOf(unsetRBackMarker, tiling.rBack) > -1) {
                 head = getFirstIndexOf(-1, tiling.rBack);
                 tail = getTail(head, tiling.rBack);
                 path = (head > 0 ? tiling.rBack[head - 1].concat([head - 1]) : []);
@@ -245,10 +248,10 @@
             return {
                 front: fillArrayWithInitialValues(numberOfAppointments),
                 back: fillArrayWithInitialValues(numberOfAppointments),
-                rBack: fillArrayWithInitialValues(numberOfAppointments, -1),
+                rBack: fillArrayWithInitialValues(numberOfAppointments, unsetRBackMarker),
                 rFront: fillArrayWithInitialValues(numberOfAppointments),
-                dx: fillArrayWithInitialValues(numberOfAppointments, 1),
-                x: fillArrayWithInitialValues(numberOfAppointments, 0)
+                dx: fillArrayWithInitialValues(numberOfAppointments, unsetDx),
+                x: fillArrayWithInitialValues(numberOfAppointments, unsetX)
             };
         },
         mapWidthsAndPositionsToOriginalAppointmentsOrder = function CalendarTiler_mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments) {
