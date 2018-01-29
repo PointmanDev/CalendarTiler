@@ -7,6 +7,8 @@
         unsetRBackMarker = -1,
         unsetDx = 1,
         unsetX = 0,
+        unsetY = 0,
+        unsetDy = 0,
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -73,7 +75,7 @@
 
             for (i = appointmentsIn.length - 1; i >= 0; --i) {
                 appointments.push({
-                    index: i,
+                    appointmentInIndex: i,
                     start: appointmentsIn[i][tileParameters.start] || fallbackStart,
                     end: getAppointmentEnd(appointmentsIn[i], tileParameters)
                 });
@@ -251,22 +253,27 @@
                 rBack: fillArrayWithInitialValues(numberOfAppointments, unsetRBackMarker),
                 rFront: fillArrayWithInitialValues(numberOfAppointments),
                 dx: fillArrayWithInitialValues(numberOfAppointments, unsetDx),
-                x: fillArrayWithInitialValues(numberOfAppointments, unsetX)
+                x: fillArrayWithInitialValues(numberOfAppointments, unsetX),
+                y: fillArrayWithInitialValues(numberOfAppointments, unsetY),
+                dy: fillArrayWithInitialValues(numberOfAppointments, unsetDy),
             };
         },
-        mapWidthsAndPositionsToOriginalAppointmentsOrder = function CalendarTiler_mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments) {
+        finalizeTiling = function CalendarTiler_finalizeTiling(tiling, appointments, appointmentsIn) {
             var i,
-                dx = new Array(appointments.length),
-                x = new Array(appointments.length);
+                sortedAppointments = new Array(appointments.length);
 
             for (i = 0; i < appointments.length; ++i) {
-                x[appointments[i].index] = tiling.x[i];
-                dx[appointments[i].index] = tiling.dx[i];
+                sortedAppointments[i] = appointmentsIn[appointments[i].appointmentInIndex];
+                tiling.y[i] = appointments[i].start;
+                tiling.dy[i] = appointments[i].end - appointments[i].start;
             }
 
             return {
-                x: x,
-                dx: dx
+                x: tiling.x,
+                dx: tiling.dx,
+                y: tiling.y,
+                dy: tiling.dy,
+                sortedAppointments: sortedAppointments
             };
         },
         tileAppointments = function CalendarTiler_tileAppointments(appointmentsIn, tileParameters) {
@@ -293,7 +300,7 @@
                 buildRBack(tiling);
             }
 
-            return mapWidthsAndPositionsToOriginalAppointmentsOrder(tiling, appointments);
+            return finalizeTiling(tiling, appointments, appointmentsIn);
         },
         calendarTiler = {
             tileAppointments: function CalendarTiler_initialize(appointmentsIn, tileParametersIn) {

@@ -57,8 +57,8 @@
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index);
-            appointment.style.height = defaultAppointmentHeight * numberOfSubdivisionsPerHour * (appointments[index].end - appointments[index].start) + 'px';
-            appointment.style.top = appointments[index].start * defaultAppointmentHeight + 'px';
+            appointment.style.height = defaultAppointmentHeight * numberOfSubdivisionsPerHour * tiling.dy[index] + 'px';
+            appointment.style.top = tiling.y[index] * defaultAppointmentHeight + 'px';
             appointment.style.width = Math.floor(defaultScheduleWidth * tiling.dx[index]) + 'px';
             appointment.style.left = defaultScheduleWidth * tiling.x[index] + 'px';
             htmlElements.exampleAppointments.appendChild(appointment);
@@ -75,6 +75,7 @@
             }
 
             tiling = window.calendarTiler.tileAppointments(appointments);
+            appointments = tiling.sortedAppointments;
 
             for (i = 0; i < numberOfAppointments; ++i) {
                 renderAppointment(i, appointments, tiling);
