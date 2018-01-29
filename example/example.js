@@ -2,23 +2,24 @@
 (function () {
     'use strict';
 
-    var hoursPerDay = 24,
+    var appointmentWidthModifier,
+        appointments,
+        tiling,
+        hoursPerDay = 24,
         minutesPerHour = 60,
         numberOfSubdivisionsPerHour = 4,
+        subdivisionHeight = 20,
+        minimumAppointmentWidth = 30,
+        numberOfAppointments = 20,
         totalNumberOfSubdivisions = hoursPerDay * numberOfSubdivisionsPerHour,
+        subdivisions = {},
+        gradientValues = [],
         htmlElements = {
             exampleTimes: document.getElementById('example-times'),
             exampleAppointments: document.getElementById('example-appointments'),
             exampleNumberOfAppointmentsInput: document.getElementById('example-number-of-appointments-input'),
             exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button')
         },
-        subdivisions = {},
-        gradientValues = [],
-        scheduleWidth,
-        defaultAppointmentHeight = 20,
-        appointments,
-        numberOfAppointments = 20,
-        tiling,
         generateSubdivisions = function example_generateSubdivisions() {
             var i,
                 minutes,
@@ -52,19 +53,30 @@
                 htmlElements.exampleAppointments.removeChild(htmlElements.exampleAppointments.lastChild);
             }
         },
-        renderAppointment = function example_renderAppointment(index, tiling) {
+        renderAppointment = function example_renderAppointment(index) {
             var appointment = document.createElement('div');
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index);
-            appointment.style.height = (defaultAppointmentHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
-            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * defaultAppointmentHeight) + 'px';
-            appointment.style.width = (Math.floor(scheduleWidth * tiling.dx[index])) + 'px';
-            appointment.style.left = (scheduleWidth * tiling.x[index]) + 'px';
+            appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
+            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 'px';
+            appointment.style.width = (appointmentWidthModifier * tiling.dx[index]) + 'px';
+            appointment.style.left = (appointmentWidthModifier * tiling.x[index]) + 'px';
+
             htmlElements.exampleAppointments.appendChild(appointment);
         },
         setScheduleWidth = function example_setAppointmentsWidth() {
-            scheduleWidth = Math.max(window.innerWidth - 100, 500);
+            var i,
+                minimalDx = Infinity,
+                adjustedWindowWidth = window.innerWidth - 100;
+
+            for (i = 0; i < numberOfAppointments; ++i) {
+                if (tiling.dx[i] < minimalDx) {
+                    minimalDx = tiling.dx[i];
+                }
+            }
+
+            appointmentWidthModifier = Math.max(adjustedWindowWidth, isFinite(minimalDx) ? (minimumAppointmentWidth / minimalDx) : adjustedWindowWidth);
         },
         drawAppointments = function example_drawAppointments() {
             var i;

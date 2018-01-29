@@ -4,11 +4,9 @@
 
     var fallbackStart = 0,
         fallbackDurationOrEnd = 1,
-        unsetRBackMarker = -1,
-        unsetDx = 1,
-        unsetX = 0,
-        unsetY = 0,
-        unsetDy = 0,
+        rBackSentinel = -1,
+        dxSentinel = 1,
+        xSentinel = 0,
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -106,12 +104,27 @@
 
             return traversals;
         },
+        setWidthAndPositionBasedOnUnsetWidths = function CalendarTiler_setWidthAndPositionBasedOnUnsetWidths(tiling, traversal, index, totalTraversalWidth) {
+            var i,
+                unset = 0,
+                width = 0;
+
+            for (i = 0; i < traversal.length; ++i) {
+                if (tiling.dx[traversal[i]] < 1) {
+                    width += tiling.dx[traversal[i]];
+                } else {
+                    ++unset;
+                }
+            }
+
+            if (tiling.dx[traversal[index]] === dxSentinel) {
+                tiling.dx[traversal[index]] = (1 - width) / (unset || 1);
+                tiling.x[traversal[index]] = totalTraversalWidth;
+            }
+        },
         calculateWidthsAndPositions = function CalendarTiler_calculateWidthsAndPositions(tiling) {
             var i,
                 j,
-                k,
-                width,
-                unset,
                 traversal,
                 traversals = constructDagTraversals(tiling),
                 totalTraversalWidth;
@@ -121,20 +134,11 @@
                 totalTraversalWidth = 0;
 
                 for (j = 0; j < traversal.length; ++j) {
-                    unset = 0;
-                    width = 0;
-
-                    for (k = 0; k < traversal.length; ++k) {
-                        if (tiling.dx[traversal[k]] < 1) {
-                            width += tiling.dx[traversal[k]];
-                        } else {
-                            ++unset;
-                        }
-                    }
-
-                    if (tiling.dx[traversal[j]] === unsetDx) {
-                        tiling.dx[traversal[j]] = (1 - width) / (unset || 1);
+                    if (tiling.rFront[traversal[j]].length > 0 && tiling.x[tiling.rFront[traversal[j]][0]] > xSentinel) {
                         tiling.x[traversal[j]] = totalTraversalWidth;
+                        tiling.dx[traversal[j]] = tiling.x[tiling.rFront[traversal[j]][0]] - totalTraversalWidth;
+                    } else {
+                        setWidthAndPositionBasedOnUnsetWidths(tiling, traversal, j, totalTraversalWidth);
                     }
 
                     totalTraversalWidth += tiling.dx[traversal[j]];
@@ -230,7 +234,7 @@
                 tail,
                 path;
 
-            while (getFirstIndexOf(unsetRBackMarker, tiling.rBack) > -1) {
+            while (getFirstIndexOf(rBackSentinel, tiling.rBack) > -1) {
                 head = getFirstIndexOf(-1, tiling.rBack);
                 tail = getTail(head, tiling.rBack);
                 path = (head > 0 ? tiling.rBack[head - 1].concat([head - 1]) : []);
@@ -250,12 +254,12 @@
             return {
                 front: fillArrayWithInitialValues(numberOfAppointments),
                 back: fillArrayWithInitialValues(numberOfAppointments),
-                rBack: fillArrayWithInitialValues(numberOfAppointments, unsetRBackMarker),
+                rBack: fillArrayWithInitialValues(numberOfAppointments, rBackSentinel),
                 rFront: fillArrayWithInitialValues(numberOfAppointments),
-                dx: fillArrayWithInitialValues(numberOfAppointments, unsetDx),
-                x: fillArrayWithInitialValues(numberOfAppointments, unsetX),
-                y: fillArrayWithInitialValues(numberOfAppointments, unsetY),
-                dy: fillArrayWithInitialValues(numberOfAppointments, unsetDy),
+                dx: fillArrayWithInitialValues(numberOfAppointments, dxSentinel),
+                x: fillArrayWithInitialValues(numberOfAppointments, xSentinel),
+                y: fillArrayWithInitialValues(numberOfAppointments, fallbackStart),
+                dy: fillArrayWithInitialValues(numberOfAppointments, fallbackDurationOrEnd),
             };
         },
         finalizeTiling = function CalendarTiler_finalizeTiling(tiling, appointments, appointmentsIn) {
