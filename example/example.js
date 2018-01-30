@@ -18,7 +18,8 @@
             exampleTimes: document.getElementById('example-times'),
             exampleAppointments: document.getElementById('example-appointments'),
             exampleNumberOfAppointmentsInput: document.getElementById('example-number-of-appointments-input'),
-            exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button')
+            exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button'),
+            exampleSchedule: document.getElementById('example-schedule')
         },
         generateSubdivisions = function example_generateSubdivisions() {
             var i,
@@ -60,7 +61,7 @@
             appointment.innerHTML = String(index + 1);
             appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
             appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 'px';
-            appointment.style.width = (appointmentWidthModifier * tiling.dx[index]) + 'px';
+            appointment.style.width =  (appointmentWidthModifier * tiling.dx[index]) + 'px';
             appointment.style.left = (appointmentWidthModifier * tiling.x[index]) + 'px';
 
             htmlElements.exampleAppointments.appendChild(appointment);
@@ -86,6 +87,10 @@
 
             for (i = 0; i < numberOfAppointments; ++i) {
                 renderAppointment(i, tiling);
+            }
+
+            for (i = 0; i < totalNumberOfSubdivisions; ++i) {
+                htmlElements.exampleAppointments.children[i].style.width = appointmentWidthModifier + 'px';
             }
         },
         generateRandomSchedule = function example_generateRandomSchedule() {
@@ -136,6 +141,10 @@
                     appointmntInvervalElement.classList.add('appointment-time-interval-first');
                 }
             }
+
+            htmlElements.exampleAppointments.addEventListener('scroll', function () {
+                htmlElements.exampleTimes.scrollTop = htmlElements.exampleAppointments.scrollTop;
+            });
 
             htmlElements.exampleNumberOfAppointmentsInput.value = numberOfAppointments;
             htmlElements.exampleNumberOfAppointmentsButton.onclick = generateRandomSchedule;

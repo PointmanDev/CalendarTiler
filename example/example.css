@@ -12,14 +12,9 @@ body {
 
 #example-schedule {
     border: 1px solid #000000;
-    overflow-y: auto;
     display: inline-block;
-    overflow-x: hidden;
-}
-
-#example-schedule {
-    height: calc(100% - 70px);
     margin-left: 10px;
+    height: calc(100% - 70px);
 }
 
 #example-work-space {
@@ -28,13 +23,16 @@ body {
 
 #example-times {
     float: left;
+    height: 100%;
+    overflow: hidden;
 }
 
 #example-appointments {
+    height: 100%;
     width: calc(100vw - 100px);
     float: right;
-    overflow-x: auto;
     position: relative;
+    overflow: auto;
 }
 
 .example-time {
