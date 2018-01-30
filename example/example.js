@@ -59,10 +59,10 @@
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index + 1);
-            appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
-            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 'px';
-            appointment.style.width =  (appointmentWidthModifier * tiling.dx[index]) + 'px';
-            appointment.style.left = (appointmentWidthModifier * tiling.x[index]) + 'px';
+            appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) - 4 + 'px';
+            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 2 + 'px';
+            appointment.style.width =  (appointmentWidthModifier * tiling.dx[index]) - 4 + 'px';
+            appointment.style.left = (appointmentWidthModifier * tiling.x[index]) + 2 + 'px';
 
             htmlElements.exampleAppointments.appendChild(appointment);
         },
