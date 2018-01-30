@@ -142,6 +142,10 @@
                 }
             }
 
+            timeElement = document.createElement('div');
+            timeElement.classList.add('example-times-scroll-spacer');
+            htmlElements.exampleTimes.appendChild(timeElement);
+
             htmlElements.exampleAppointments.addEventListener('scroll', function () {
                 htmlElements.exampleTimes.scrollTop = htmlElements.exampleAppointments.scrollTop;
             });
