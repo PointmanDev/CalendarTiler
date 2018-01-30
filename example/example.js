@@ -57,7 +57,7 @@
             var appointment = document.createElement('div');
 
             appointment.classList.add('example-appointment');
-            appointment.innerHTML = String(index);
+            appointment.innerHTML = String(index + 1);
             appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) + 'px';
             appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 'px';
             appointment.style.width = (appointmentWidthModifier * tiling.dx[index]) + 'px';
@@ -106,7 +106,7 @@
         fillGradientValues = function example_fillGradientValues() {
             var i;
             for (i = 0; i < numberOfSubdivisionsPerHour; ++i) {
-                gradientValues[i] = '#' + (i % 2 === 0 ? 'ffffff' : 'f2f2f2');
+                gradientValues[i] = '#' + (i % 2 === 0 ? 'f2f2f2' : 'e2e2e2');
             }
         },
         initialize = function example_initialize() {

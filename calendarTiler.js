@@ -5,8 +5,8 @@
     var fallbackStart = 0,
         fallbackDurationOrEnd = 1,
         rBackSentinel = -1,
-        dxSentinel = 1,
-        xSentinel = 0,
+        unsetDx = 1,
+        unsetX = 0,
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -104,7 +104,7 @@
 
             return traversals;
         },
-        setWidthAndPositionBasedOnUnsetWidths = function CalendarTiler_setWidthAndPositionBasedOnUnsetWidths(tiling, traversal, index, totalTraversalWidth) {
+        setWidthAndPositionBasedOnWidths = function setWidthAndPositionBasedOnWidths(tiling, traversal, vertex, totalTraversalWidth) {
             var i,
                 unset = 0,
                 width = 0;
@@ -117,28 +117,45 @@
                 }
             }
 
-            if (tiling.dx[traversal[index]] === dxSentinel) {
-                tiling.dx[traversal[index]] = (1 - width) / (unset || 1);
-                tiling.x[traversal[index]] = totalTraversalWidth;
+            if (tiling.dx[vertex] === unsetDx) {
+                tiling.dx[vertex] = (1 - width) / (unset || 1);
+                tiling.x[vertex] = totalTraversalWidth;
             }
+        },
+        tryToSetWidthAndPositionFromBllockingVertex = function CalendarTiler_tryToSetWidthAndPositionFromBllockingVertex(tiling, traversal, index, totalTraversalWidth) {
+            var i,
+                blockingVertexIndex = -1;
+
+            for (i = index + 1; i < traversal.length; ++i) {
+                if (tiling.x[traversal[i]] !== unsetX) {
+                    blockingVertexIndex = i;
+                    break;
+                }
+            }
+
+            if (blockingVertexIndex > -1 && tiling.dx[traversal[index]] === unsetDx) {
+                tiling.dx[traversal[index]] = (tiling.x[traversal[blockingVertexIndex]] - totalTraversalWidth) / (blockingVertexIndex - index);
+                tiling.x[traversal[index]] = totalTraversalWidth;
+
+                return true;
+            }
+
+            return false;
         },
         calculateWidthsAndPositions = function CalendarTiler_calculateWidthsAndPositions(tiling) {
             var i,
                 j,
                 traversal,
-                traversals = constructDagTraversals(tiling),
-                totalTraversalWidth;
+                totalTraversalWidth,
+                traversals = constructDagTraversals(tiling);
 
             for (i = 0; i < traversals.length; ++i) {
                 traversal = traversals[i];
                 totalTraversalWidth = 0;
 
                 for (j = 0; j < traversal.length; ++j) {
-                    if (tiling.rFront[traversal[j]].length > 0 && tiling.x[tiling.rFront[traversal[j]][0]] > xSentinel) {
-                        tiling.x[traversal[j]] = totalTraversalWidth;
-                        tiling.dx[traversal[j]] = tiling.x[tiling.rFront[traversal[j]][0]] - totalTraversalWidth;
-                    } else {
-                        setWidthAndPositionBasedOnUnsetWidths(tiling, traversal, j, totalTraversalWidth);
+                    if (!tryToSetWidthAndPositionFromBllockingVertex(tiling, traversal, j, totalTraversalWidth)) {
+                        setWidthAndPositionBasedOnWidths(tiling, traversal, traversal[j], totalTraversalWidth);
                     }
 
                     totalTraversalWidth += tiling.dx[traversal[j]];
@@ -171,11 +188,16 @@
             calculateWidthsAndPositions(tiling);
         },
         sharesLinchPin = function CalendarTiler_sharesLinchPin(minFront, index, tiling) {
-            var rBack = tiling.rBack[minFront],
-                linchPin = rBack[rBack.length - 1];
+            var i,
+                linchPin,
+                rBack = tiling.rBack[minFront];
 
-            if (linchPin && getFirstIndexOf(linchPin, tiling.rFront[index]) > -1) {
-                return true;
+            for (i = rBack.length - 1; i >= 0; --i) {
+                linchPin = rBack[i];
+
+                if (getFirstIndexOf(linchPin, tiling.rFront[index]) > -1) {
+                    return true;
+                }
             }
 
             return false;
@@ -256,8 +278,8 @@
                 back: fillArrayWithInitialValues(numberOfAppointments),
                 rBack: fillArrayWithInitialValues(numberOfAppointments, rBackSentinel),
                 rFront: fillArrayWithInitialValues(numberOfAppointments),
-                dx: fillArrayWithInitialValues(numberOfAppointments, dxSentinel),
-                x: fillArrayWithInitialValues(numberOfAppointments, xSentinel),
+                dx: fillArrayWithInitialValues(numberOfAppointments, unsetDx),
+                x: fillArrayWithInitialValues(numberOfAppointments, unsetX),
                 y: fillArrayWithInitialValues(numberOfAppointments, fallbackStart),
                 dy: fillArrayWithInitialValues(numberOfAppointments, fallbackDurationOrEnd),
             };
