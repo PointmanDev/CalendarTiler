@@ -2,9 +2,37 @@
 An algorithm for aesthetically displaying appointments/events on a calendar, currently implemented in JS (more languages to come).
 
 # Why?
-At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this algorithm and implemented it in JS (my desk was covered in scratch pad paper with little boxes drawn all over them for about 2 weeks, fun times).
+At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this algorithm and then implemented it in JS. It's gone through several iterations and eventually ended up the way it is now because it is both space efficient and aesthetically pleasing.
 
-# How?
+# Usage
+Please consult the example files to see the full process in action and to how it could be used from start to finish.
+
+There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters
+* `appointments` (REQUIRED) which is an array of appointments that need to be tiled they need to include 2 properties in order to be tiled
+    1. `<START_VALUE>` a number specifying the start of the appointment
+    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number  specifying the end of the appointment (or the duration of the appointment)
+* `tileParameters` (OPTIONAL) which is an object that has 3 properties
+    1. `start` a string (Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
+    2. `delineator` a string (Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
+    3. `usesDuration` a Boolean (Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.
+
+The output is a single object with 5 properties
+* `appointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending.
+* `x` an array of the x-coordinates for where each appointment should be placed on the x-axis
+* `dx` an array of the widths for how wide each appointment should be on the x-axis
+* `y` an array of the y-coordinates for where each appointment should be placed on the y-axis (note these are just the `start` values of each appointment)
+* `dy` an array of the heights for how tall each appointment should be on the y-axis (note these are just `end` - `start` or `duration` for each appointment)
+
+Please note that the `x` and `dx` values are normalized between 0 and 1 while the `y` and `dy` keep the units of the input appointments.
+
+# Input Examples
+* Using default `tileParameters`
+    1. `appointments = [{ start: 0, end: 12 }, { start: 4.5, end: 6.75 }, { start: 13.25, end: 19.5 }]`
+* Passing `tileParameters`
+    1. `appointments = [{ wEirDsTart: 7.5, ohADuration: 21.25 }, { wEirDsTart: 14.25, ohADuration: 16.75 }, { wEirDsTart: 22, ohADuration: 23.75 }]`
+    2. `tileParameters = { start: "wEirDsTart", delineator: "ohADuration", usesDuration: true }`
+
+# The Algorithm
 The algorithm works by accepting an array of appointments `A` as an input, where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` and `e_a` can be any real valued numbers with `s_a < e_a` (however `0 < s_a < e_a <= 24` is a typical use case).
 
 The goal of the algorithm is to produce a array `Tiling_A` which for each appointment `a` in `A` contains a 4-dimensional vector `tile_a = (s_a, e_a, x_a, w_a)` where
@@ -51,7 +79,7 @@ Pictorally (Diagram 1) this would resemble the following,
                                                                 +---------+         |         |
                                                                           |         |         |
                                                                           +---------+---------+
-                                                                     
+
 Step 2: For each `a` in `A` build 2 arrays called `Back_a` and `Front_a` by the following rules,
 * `b` in `Back_a` iff `b` comes before `a` in the sort order and `e_b > s_a`
 * `b` in `Front_a` iff `b` comes after `a` in the sort order and `s_b < e_a`
@@ -95,12 +123,12 @@ Pictorally (Diagram 2) resembles the following,
 
 Using the diagram above, this would produce the following array
 
-*`RBack_A = [[], [0], [0, 1], [0], [0, 3], [], [5], [5, 6], [5, 6, 7]]`
+* `RBack_A = [[], [0], [0, 1], [0], [0, 3], [], [5], [5, 6], [5, 6, 7]]`
 
 Step 4: Reduce each of the `Front_a` arrays in a new array `ReduceedFront_a` or `RFront_a` for short in the following way,
 * If `RBack_a` is maximal (i.e. `RBack_a == Back_a`) then `Front_a` is not empty with `b` in `Front_a` such that the `RBack_b` has greater length than `RBack_a` then `b` is the first entry of the array `RFront_a`
 * If `RBack_a` is not maximal, then we need to check both `Back_a` and `Front_a` for possible candidates to be the first entry of `RFront_a` (note that `RBack_a` and `RFront_a` will never share common values). This creates some subcases,
-  * For each `b` in `Back_a` where `b` is not in `RBack_a` we must do the following, 
+  * For each `b` in `Back_a` where `b` is not in `RBack_a` we must do the following,
     1. Initialize a value called `minRFront` with `null`.
     3. Expand `RFront_b`, this is done by taking the first entry `c` of `RFront_b` (calculated in the previous step) and then appending the first entry `d` of `RFront_c` to `Front_b` and so on. (Intuitively this is just taking the next value blocking the `c` and building the path out)
     3. Set `minRFront = minRFront || b`
@@ -132,13 +160,13 @@ Pictorally (Diagram 3) gives us the following,
      |
      |
      v
-     3  --->  4 
+     3  --->  4
               ^
               |
               |
               |
               5  --->  6  --->  7 ---> 8
-     
+
 Note that Step 5 is actually not a step, it's really more of a consideration, because we don't really do anything with `DAG_A`, we just need the traversals.
 
 Step 6: Time to calculate the `w_a` and `x_a` values for each `a` in `A`. This is done in the following way,
