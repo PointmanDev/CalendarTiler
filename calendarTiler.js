@@ -194,6 +194,7 @@
 
                 while (next) {
                     tiling.rFront[index].push(next);
+                    
                     if (tiling.rFront[next].length > 0) {
                         next = tiling.rFront[next][0];
                     } else {
