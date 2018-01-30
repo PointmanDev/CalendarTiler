@@ -103,7 +103,7 @@
                 currentVertex = vertex,
                 traversal = tiling.rBack[vertex].concat([vertex]);
 
-            while(tiling.rFront[currentVertex].length > 0) {
+            while (tiling.rFront[currentVertex].length > 0) {
                 nextVertex = getNextVertexInTraversal(tiling, currentVertex);
                 traversal.push(nextVertex);
                 currentVertex = nextVertex;
@@ -194,7 +194,7 @@
 
                 while (next) {
                     tiling.rFront[index].push(next);
-                    
+
                     if (tiling.rFront[next].length > 0) {
                         next = tiling.rFront[next][0];
                     } else {
@@ -306,7 +306,7 @@
                 dx: fillArrayWithInitialValues(numberOfAppointments, dxSentinel),
                 x: fillArrayWithInitialValues(numberOfAppointments, xSentinel),
                 y: fillArrayWithInitialValues(numberOfAppointments, startSentinel),
-                dy: fillArrayWithInitialValues(numberOfAppointments, durationOrEndSentinel),
+                dy: fillArrayWithInitialValues(numberOfAppointments, durationOrEndSentinel)
             };
         },
         finalizeTiling = function CalendarTiler_finalizeTiling(tiling, appointments, appointmentsIn) {
