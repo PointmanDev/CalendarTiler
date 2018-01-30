@@ -153,7 +153,7 @@
                 dx = 0;
 
             for (i = 0; i < traversal.length; ++i) {
-                if (tiling.dx[traversal[i]] < 1) {
+                if (tiling.dx[traversal[i]] < dxSentinel) {
                     dx += tiling.dx[traversal[i]];
                 } else {
                     ++unset;
