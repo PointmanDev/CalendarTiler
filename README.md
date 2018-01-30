@@ -7,17 +7,17 @@ At work (https://fieldnimble.com/) we needed a way to display the calendars of m
 # Usage
 Please consult the example files to see the full process in action and to how it could be used from start to finish.
 
-There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters
-* `appointments` (REQUIRED) which is an array of appointments that need to be tiled they need to include 2 properties in order to be tiled
+There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
+* `appointments` (Required) which is an array of objects (appointments) that need to be tiled they, need to include 2 properties in order to be tiled
     1. `<START_VALUE>` a number specifying the start of the appointment
-    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number  specifying the end of the appointment (or the duration of the appointment)
-* `tileParameters` (OPTIONAL) which is an object that has 3 properties
+    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number specifying the end of the appointment (or the duration of the appointment) note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>`
+* `tileParameters` (Optional) which is an object that has 3 properties
     1. `start` a string (Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
     2. `delineator` a string (Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
     3. `usesDuration` a Boolean (Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.
 
-The output is a single object with 5 properties
-* `appointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending.
+The output is a single object with 5 properties,
+* `appointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending
 * `x` an array of the x-coordinates for where each appointment should be placed on the x-axis
 * `dx` an array of the widths for how wide each appointment should be on the x-axis
 * `y` an array of the y-coordinates for where each appointment should be placed on the y-axis (note these are just the `start` values of each appointment)
@@ -26,9 +26,9 @@ The output is a single object with 5 properties
 Please note that the `x` and `dx` values are normalized between 0 and 1 while the `y` and `dy` keep the units of the input appointments.
 
 # Input Examples
-* Using default `tileParameters`
+* Using default `tileParameters`,
     1. `appointments = [{ start: 0, end: 12 }, { start: 4.5, end: 6.75 }, { start: 13.25, end: 19.5 }]`
-* Passing `tileParameters`
+* Passing `tileParameters`,
     1. `appointments = [{ wEirDsTart: 7.5, ohADuration: 21.25 }, { wEirDsTart: 14.25, ohADuration: 16.75 }, { wEirDsTart: 22, ohADuration: 23.75 }]`
     2. `tileParameters = { start: "wEirDsTart", delineator: "ohADuration", usesDuration: true }`
 
