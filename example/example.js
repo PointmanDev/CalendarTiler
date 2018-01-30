@@ -8,7 +8,7 @@
         hoursPerDay = 24,
         minutesPerHour = 60,
         numberOfSubdivisionsPerHour = 4,
-        subdivisionHeight = 20,
+        subdivisionHeight = 24,
         minimumAppointmentWidth = 30,
         numberOfAppointments = 20,
         totalNumberOfSubdivisions = hoursPerDay * numberOfSubdivisionsPerHour,

@@ -56,7 +56,6 @@ div::-webkit-scrollbar {
 }
 
 .example-time {
-    height: 20px;
     width: 48px;
     border: 1px solid #000000;
     border-bottom: none;
@@ -71,15 +70,19 @@ div::-webkit-scrollbar {
 }
 
 .appointment-time {
-    height: 20px;
     border-top: 1px solid #000000;
     box-sizing: border-box;
 }
 
 .appointment-time-interval {
-    height: 20px;
     border-top: 1px dotted #000000;
     box-sizing: border-box;
+}
+
+.example-time,
+.appointment-time,
+.appointment-time-interval {
+    height: 24px;
 }
 
 .appointment-time-interval-first {

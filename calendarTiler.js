@@ -81,6 +81,36 @@
 
             return appointments.sort(sortAppointments);
         },
+        getNextVertexInTraversal = function CalendarTiler_getNextVertexInTraversal(tiling, currentVertex) {
+            var i,
+                lastRBackVertex,
+                nextVertex = tiling.rFront[currentVertex][0],
+                maximalRFrontLength = tiling.rFront[currentVertex].length;
+
+            for (i = tiling.rFront.length - 1; i >= 0; --i) {
+                lastRBackVertex = tiling.rBack[i][tiling.rBack[i].length - 1];
+
+                if (lastRBackVertex === currentVertex && tiling.rFront[i].length > maximalRFrontLength) {
+                    maximalRFrontLength = tiling.rFront[i].length;
+                    nextVertex = i;
+                }
+            }
+
+            return nextVertex;
+        },
+        getLongestTraversalThroughVertex = function CalendarTiler_getLongestTraversalThroughVertex(tiling, vertex) {
+            var nextVertex,
+                currentVertex = vertex,
+                traversal = tiling.rBack[vertex].concat([vertex]);
+
+            while(tiling.rFront[currentVertex].length > 0) {
+                nextVertex = getNextVertexInTraversal(tiling, currentVertex);
+                traversal.push(nextVertex);
+                currentVertex = nextVertex;
+            }
+
+            return traversal;
+        },
         constructDagTraversals = function CalendarTiler_constructDagTraversals(tiling) {
             var i,
                 traversal,
@@ -88,11 +118,11 @@
                 traversals = [],
                 traversalMap = {};
 
-            for (i = 0; i < tiling.rBack.length; ++i) {
-                traversal = tiling.rBack[i].concat([i]).concat(tiling.rFront[i]);
-                traversalKey = traversal.join('');
+            for (i = tiling.rBack.length - 1; i >= 0; --i) {
+                traversal = getLongestTraversalThroughVertex(tiling, i, traversalMap);
+                traversalKey = traversal.join();
 
-                if (!traversalMap[traversalKey]) {
+                if (isUndefined(traversalMap[traversalKey])) {
                     traversalMap[traversalKey] = true;
                     traversals.push(traversal);
                 }
