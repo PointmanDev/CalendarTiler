@@ -62,7 +62,7 @@
                     visitedVertices = fillArray(numberOrVertices, false);
 
                 for (i = 0; i < numberOrVertices; ++i) {
-                    if (visitedVertices[i] == false) {
+                    if (visitedVertices[i] === false) {
                         visitVertex(i, visitedVertices);
                     }
                 }
