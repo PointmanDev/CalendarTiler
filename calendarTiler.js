@@ -2,7 +2,8 @@
 (function () {
     'use strict';
 
-    var startSentinel = 0,
+    var calendarTiler,
+        startSentinel = 0,
         durationOrEndSentinel = 1,
         rBackSentinel = -1,
         dxSentinel = 1,
@@ -16,19 +17,15 @@
         isUndefined = function CalendarTiler_isUndefined(value) {
             return value === undefined;
         },
-        sortAppointments = function CalendarTiler_sortAppointments(a, b) {
-            return a.start - b.start || b.end - a.end;
-        },
-        getTail = function CalendarTiler_getTail(head, array) {
-            var i;
+        fillArray = function CalendarTiler_fillArray(numberOfAppointments, initialValue) {
+            var i,
+                array = [];
 
-            for (i = head + 1; i < array.length; ++i) {
-                if (array[i] !== -1) {
-                    return i;
-                }
+            for (i = 0; i < numberOfAppointments; ++i) {
+                array.push(isUndefined(initialValue) ? [] : initialValue);
             }
 
-            return array.length;
+            return array;
         },
         getFirstIndexOf = function CalendarTiler_getFirstIndexOf(val, array) {
             var i;
@@ -40,18 +37,113 @@
             }
 
             return -1;
-        },
-        fillArrayWithInitialValues = function CalendarTiler_fillArrayWithInitialValues(numberOfAppointments, initialValue) {
-            var i,
-                array = [];
+        };
 
-            for (i = 0; i < numberOfAppointments; ++i) {
-                array.push(isUndefined(initialValue) ? [] : initialValue);
+    function DirectedAcylicGraph(numberOrVertices) {
+        var dag = this,
+            edges = fillArray(numberOrVertices),
+            topologicalOrdering = [],
+            visitVertex = function DirectedAcylicGraph_visitVertex(vertex,  visitedVertices) {
+                var i,
+                    edgeSet = edges[vertex];
+
+                visitedVertices[vertex] = true;
+
+                for (i = 0; i < edgeSet.length; ++i) {
+                    if (!visitedVertices[edgeSet[i]]) {
+                        visitVertex(edgeSet[i], visitedVertices);
+                    }
+                }
+
+                topologicalOrdering.push(vertex);
+            },
+            topologicalSort = function DirectedAcylicGraph_topologicalSort() {
+                var i,
+                    visitedVertices = fillArray(numberOrVertices, false);
+
+                for (i = 0; i < numberOrVertices; ++i) {
+                    if (visitedVertices[i] == false) {
+                        visitVertex(i, visitedVertices);
+                    }
+                }
+            };
+
+        dag.addEdge = function DirectedAcylicGraph_addEdge(fromVertex, toVertex) {
+            if (getFirstIndexOf(toVertex, edges[fromVertex]) === -1) {
+                edges[fromVertex].push(toVertex);
+            }
+        };
+
+        dag.getLongestPathThroughVertex = function DirectedAcylicGraph_getLongestPathThroughVertex(vertex) {
+            var i,
+                j,
+                fromVertex,
+                toVertex,
+                longestPathLength = -1,
+                longestPathIndex = -1,
+                longestPath = [],
+                incomingVertices = fillArray(numberOrVertices, null),
+                paths = fillArray(numberOrVertices, -1);
+
+            if (topologicalOrdering.length === 0) {
+                topologicalSort();
             }
 
-            return array;
+            paths[vertex] = 0;
+
+            for (i = topologicalOrdering.length - 1; i >= 0; --i) {
+                fromVertex = topologicalOrdering[i];
+
+                if (paths[fromVertex] !== -1) {
+                    for (j = 0; j < edges[fromVertex].length; ++j) {
+                        toVertex = edges[fromVertex][j];
+
+                        if (paths[toVertex] <= paths[fromVertex]) {
+                            paths[toVertex] = paths[fromVertex] + 1;
+                            incomingVertices[toVertex] = fromVertex;
+                        }
+                    }
+                }
+            }
+
+            for (i = paths.length - 1; i >= 0; --i) {
+                if (paths[i] >= longestPathLength) {
+                    longestPathLength = paths[i];
+                    longestPathIndex = i;
+                }
+            }
+
+            if (longestPathIndex > -1) {
+                longestPath.push(longestPathIndex);
+
+                for (i = 0; i < longestPathLength; ++i) {
+                    longestPath.push(incomingVertices[longestPathIndex]);
+                    longestPathIndex = incomingVertices[longestPathIndex];
+                }
+            }
+
+            longestPath.pop();
+
+            return longestPath;
+        };
+    }
+
+    calendarTiler = {
+        sortAppointments: function CalendarTiler_sortAppointments(a, b) {
+            return a.start - b.start || b.end - a.end;
         },
-        mapTileParameters = function CalendarTiler_mapTileParameters(tileParametersIn) {
+        getTail: function CalendarTiler_getTail(head, array) {
+            var i;
+
+            for (i = head + 1; i < array.length; ++i) {
+                if (array[i] !== rBackSentinel) {
+                    return i;
+                }
+            }
+
+            return array.length;
+        },
+        mapTileParameters: function CalendarTiler_mapTileParameters(tileParametersIn) {
             var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {};
 
             return {
@@ -60,14 +152,14 @@
                 delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
             };
         },
-        getAppointmentEnd = function CalendarTiler_getAppointmentEnd(appointment, tileParameters) {
+        getAppointmentEnd: function CalendarTiler_getAppointmentEnd(appointment, tileParameters) {
             if (tileParameters.usesDuration) {
                 return (appointment[tileParameters.start] || startSentinel) + (appointment[tileParameters.delineator] || durationOrEndSentinel);
             }
 
             return appointment[tileParameters.delineator] || durationOrEndSentinel;
         },
-        copyRelevantAppointmentData = function CalendarTiler_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
+        copyRelevantAppointmentData: function CalendarTiler_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
             var i,
                 appointments = [];
 
@@ -75,86 +167,33 @@
                 appointments.push({
                     appointmentInIndex: i,
                     start: appointmentsIn[i][tileParameters.start] || startSentinel,
-                    end: getAppointmentEnd(appointmentsIn[i], tileParameters)
+                    end: calendarTiler.getAppointmentEnd(appointmentsIn[i], tileParameters)
                 });
             }
 
-            return appointments.sort(sortAppointments);
+            return appointments.sort(calendarTiler.sortAppointments);
         },
-        getNextVertexInTraversal = function CalendarTiler_getNextVertexInTraversal(tiling, currentVertex) {
-            var i,
-                lastRBackVertex,
-                nextVertex = tiling.rFront[currentVertex][0],
-                maximalRFrontLength = tiling.rFront[currentVertex].length;
-
-            for (i = tiling.rFront.length - 1; i >= 0; --i) {
-                lastRBackVertex = tiling.rBack[i][tiling.rBack[i].length - 1];
-
-                if (lastRBackVertex === currentVertex && tiling.rFront[i].length > maximalRFrontLength) {
-                    maximalRFrontLength = tiling.rFront[i].length;
-                    nextVertex = i;
-                }
-            }
-
-            return nextVertex;
-        },
-        getLongestTraversalThroughVertex = function CalendarTiler_getLongestTraversalThroughVertex(tiling, vertex) {
-            var nextVertex,
-                currentVertex = vertex,
-                traversal = tiling.rBack[vertex].concat([vertex]);
-
-            while (tiling.rFront[currentVertex].length > 0) {
-                nextVertex = getNextVertexInTraversal(tiling, currentVertex);
-                traversal.push(nextVertex);
-                currentVertex = nextVertex;
-            }
-
-            return traversal;
-        },
-        constructDagTraversals = function CalendarTiler_constructDagTraversals(tiling) {
-            var i,
-                traversal,
-                traversalKey,
-                traversals = [],
-                traversalMap = {};
-
-            for (i = tiling.rBack.length - 1; i >= 0; --i) {
-                traversal = getLongestTraversalThroughVertex(tiling, i, traversalMap);
-                traversalKey = traversal.join();
-
-                if (isUndefined(traversalMap[traversalKey])) {
-                    traversalMap[traversalKey] = true;
-                    traversals.push(traversal);
-                }
-            }
-
-            traversals.sort(function (a, b) {
-                return b.length - a.length;
-            });
-
-            return traversals;
-        },
-        calculateBlockingDx = function CalendarTiler_calculateBlockingDx(tiling, traversal, index, x) {
+        calculateBlockingDx: function CalendarTiler_calculateBlockingDx(tiling, path, index, x) {
             var i,
                 blockingVertexIndex = -1;
 
-            for (i = index + 1; i < traversal.length; ++i) {
-                if (tiling.x[traversal[i]] !== xSentinel) {
+            for (i = index + 1; i < path.length; ++i) {
+                if (tiling.x[path[i]] !== xSentinel) {
                     blockingVertexIndex = i;
                     break;
                 }
             }
 
-            return blockingVertexIndex > -1 ? ((tiling.x[traversal[blockingVertexIndex]] - x) / (blockingVertexIndex - index)) : undefined;
+            return blockingVertexIndex > -1 ? ((tiling.x[path[blockingVertexIndex]] - x) / (blockingVertexIndex - index)) : undefined;
         },
-        calculateNonBlockingDx = function CalendarTiler_calculateDx(tiling, traversal) {
+        calculateNonBlockingDx: function CalendarTiler_calculateDx(tiling, path) {
             var i,
                 unset = 0,
                 dx = 0;
 
-            for (i = 0; i < traversal.length; ++i) {
-                if (tiling.dx[traversal[i]] < dxSentinel) {
-                    dx += tiling.dx[traversal[i]];
+            for (i = 0; i < path.length; ++i) {
+                if (tiling.dx[path[i]] < dxSentinel) {
+                    dx += tiling.dx[path[i]];
                 } else {
                     ++unset;
                 }
@@ -162,33 +201,94 @@
 
             return ((1 - dx) / (unset || 1));
         },
-        setXAndDxValues = function CalendarTiler_setXAndDxValues(tiling, traversal, index) {
-            var previousVertex = traversal[index - 1],
+        setXAndDxValues: function CalendarTiler_setXAndDxValues(tiling, path, index) {
+            var previousVertex = path[index - 1],
                 x = isUndefined(previousVertex) ? 0 : (tiling.x[previousVertex] + tiling.dx[previousVertex]),
-                dx = calculateBlockingDx(tiling, traversal, index, x);
+                dx = calendarTiler.calculateBlockingDx(tiling, path, index, x);
 
-            if (tiling.dx[traversal[index]] === dxSentinel) {
-                tiling.x[traversal[index]] = x;
-                tiling.dx[traversal[index]] = isUndefined(dx) ? calculateNonBlockingDx(tiling, traversal) : dx;
+            if (tiling.dx[path[index]] === dxSentinel) {
+                tiling.x[path[index]] = x;
+                tiling.dx[path[index]] = isUndefined(dx) ? calendarTiler.calculateNonBlockingDx(tiling, path) : dx;
             }
         },
-        calculateXAndDxValues = function CalendarTiler_calculateXAndDxValues(tiling) {
+        calculateXAndDxValues: function CalendarTiler_calculateXAndDxValues(tiling, paths) {
             var i,
-                j,
-                traversal,
-                traversals = constructDagTraversals(tiling);
+                j;
 
-            for (i = 0; i < traversals.length; ++i) {
-                traversal = traversals[i];
-
-                for (j = 0; j < traversal.length; ++j) {
-                    setXAndDxValues(tiling, traversal, j);
+            for (i = 0; i < paths.length; ++i) {
+                for (j = 0; j < paths[i].length; ++j) {
+                    calendarTiler.setXAndDxValues(tiling, paths[i], j);
                 }
             }
 
             return tiling;
         },
-        expandRFront = function CalendarTiler_expandRFront(index, tiling) {
+        addVertexEdgeToDirectedAcyclicGraphs: function CalendarTiler_addVertexEdgeToDirectedAcyclicGraphs(tiling, forwardDag, backwardDag, fromVertex, toVertex) {
+            if (tiling.rBack[toVertex][tiling.rBack[toVertex].length - 1] === fromVertex) {
+                forwardDag.addEdge(fromVertex, toVertex);
+            }
+
+            if (tiling.rFront[toVertex][0] === fromVertex) {
+                backwardDag.addEdge(fromVertex, toVertex);
+            }
+        },
+        addEVertexEdgesToDirectedAcyclicGraphs: function CalendarTiler_addEVertexEdgesToDirectedAcyclicGraphs(tiling, forwardDag, backwardDag, fromVertex) {
+            var i;
+
+            if (tiling.rFront[fromVertex].length > 0) {
+                forwardDag.addEdge(fromVertex, tiling.rFront[fromVertex][0]);
+            }
+
+            if (tiling.rBack[fromVertex].length > 0) {
+                backwardDag.addEdge(fromVertex, tiling.rBack[fromVertex][tiling.rBack[fromVertex].length - 1]);
+            }
+
+            for (i = tiling.rBack.length - 1; i > fromVertex; --i) {
+                calendarTiler.addVertexEdgeToDirectedAcyclicGraphs(tiling, forwardDag, backwardDag, fromVertex, i);
+            }
+
+            for (i = fromVertex - 1; i >= 0; --i) {
+                calendarTiler.addVertexEdgeToDirectedAcyclicGraphs(tiling, forwardDag, backwardDag, fromVertex, i);
+            }
+        },
+        concatenateDirectedAcylicGraphPaths: function CalendarTiler_concatenateDirectedAcylicGraphPaths(tiling, forwardDag, backwardDag) {
+            var i,
+                path,
+                pathKey,
+                pathMap = {},
+                longestPathThroughVertex = [];
+
+            for (i = 0; i < tiling.rFront.length; ++i) {
+                path = backwardDag.getLongestPathThroughVertex(i).concat([i]).concat(forwardDag.getLongestPathThroughVertex(i).reverse());
+                pathKey = path.join();
+
+                if (isUndefined(pathMap[pathKey])) {
+                    pathMap[pathKey] = true;
+                    longestPathThroughVertex.push(path);
+                }
+            }
+
+            return longestPathThroughVertex;
+        },
+        buildDirectedAcyclicGraphs: function CalendarTiler_buildDirectedAcyclicGraphs(tiling) {
+            var i,
+                paths,
+                forwardDag = new DirectedAcylicGraph(tiling.rFront.length),
+                backwardDag = new DirectedAcylicGraph(tiling.rFront.length);
+
+            for (i = 0; i < tiling.rFront.length; ++i) {
+                calendarTiler.addEVertexEdgesToDirectedAcyclicGraphs(tiling, forwardDag, backwardDag, i);
+            }
+
+            paths = calendarTiler.concatenateDirectedAcylicGraphPaths(tiling, forwardDag, backwardDag);
+
+            paths.sort(function (a, b) {
+                return b.length - a.length;
+            });
+
+            calendarTiler.calculateXAndDxValues(tiling, paths);
+        },
+        expandRFront: function CalendarTiler_expandRFront(index, tiling) {
             if (tiling.rFront[index].length === 1) {
                 var next = tiling.rFront[tiling.rFront[index][0]][0];
 
@@ -203,16 +303,16 @@
                 }
             }
         },
-        expandRemainingRFront = function CalendarTiler_expandRemainingRFront(tiling) {
+        expandRemainingRFront: function CalendarTiler_expandRemainingRFront(tiling) {
             var i;
 
             for (i = 0; i < tiling.rFront.length; ++i) {
-                expandRFront(i, tiling);
+                calendarTiler.expandRFront(i, tiling);
             }
 
-            calculateXAndDxValues(tiling);
+            calendarTiler.buildDirectedAcyclicGraphs(tiling);
         },
-        sharesLinchPin = function CalendarTiler_sharesLinchPin(minFront, index, tiling) {
+        sharesLinchPin: function CalendarTiler_sharesLinchPin(minFront, index, tiling) {
             var i,
                 linchPin,
                 rBack = tiling.rBack[minFront];
@@ -227,7 +327,7 @@
 
             return false;
         },
-        findNextRFrontFromBack = function CalendarTiler_findNextRFrontFromBack(index, tiling) {
+        findNextRFrontFromBack: function CalendarTiler_findNextRFrontFromBack(index, tiling) {
             var i,
                 back,
                 minFront;
@@ -236,10 +336,10 @@
                 back = tiling.back[index][i];
 
                 if (getFirstIndexOf(back, tiling.rBack[index]) === -1) {
-                    expandRFront(back, tiling);
+                    calendarTiler.expandRFront(back, tiling);
                     minFront = minFront || back;
 
-                    if (back !== minFront && (getFirstIndexOf(minFront, tiling.rFront[back]) > -1 || sharesLinchPin(minFront, back, tiling))) {
+                    if (back !== minFront && (getFirstIndexOf(minFront, tiling.rFront[back]) > -1 || calendarTiler.sharesLinchPin(minFront, back, tiling))) {
                         minFront = back;
                     }
                 }
@@ -247,7 +347,7 @@
 
             return minFront;
         },
-        buildRFront = function CalendarTiler_buildRFront(tiling) {
+        buildRFront: function CalendarTiler_buildRFront(tiling) {
             var i,
                 next;
 
@@ -257,7 +357,7 @@
                         tiling.rFront[i].push(tiling.front[i][0]);
                     }
                 } else {
-                    next = next || findNextRFrontFromBack(i, tiling);
+                    next = next || calendarTiler.findNextRFrontFromBack(i, tiling);
 
                     if (tiling.front[i].length > 0 && getFirstIndexOf(next, tiling.back[tiling.front[i][0]]) > -1) {
                         if (tiling.rBack[tiling.front[i][0]].length < tiling.rBack[i].length) {
@@ -273,9 +373,9 @@
                 }
             }
 
-            expandRemainingRFront(tiling);
+            calendarTiler.expandRemainingRFront(tiling);
         },
-        buildRBack = function CalendarTiler_buildRBack(tiling) {
+        buildRBack: function CalendarTiler_buildRBack(tiling) {
             var next,
                 head,
                 tail,
@@ -283,7 +383,7 @@
 
             while (getFirstIndexOf(rBackSentinel, tiling.rBack) > -1) {
                 head = getFirstIndexOf(-1, tiling.rBack);
-                tail = getTail(head, tiling.rBack);
+                tail = calendarTiler.getTail(head, tiling.rBack);
                 path = (head > 0 ? tiling.rBack[head - 1].concat([head - 1]) : []);
 
                 while (head < tail) {
@@ -293,23 +393,23 @@
                 }
             }
 
-            buildRFront(tiling);
+            calendarTiler.buildRFront(tiling);
         },
-        generateTilingObject = function CalendarTiler_generateTilingObject(appointments) {
+        generateTilingObject: function CalendarTiler_generateTilingObject(appointments) {
             var numberOfAppointments = appointments.length;
 
             return {
-                front: fillArrayWithInitialValues(numberOfAppointments),
-                back: fillArrayWithInitialValues(numberOfAppointments),
-                rBack: fillArrayWithInitialValues(numberOfAppointments, rBackSentinel),
-                rFront: fillArrayWithInitialValues(numberOfAppointments),
-                dx: fillArrayWithInitialValues(numberOfAppointments, dxSentinel),
-                x: fillArrayWithInitialValues(numberOfAppointments, xSentinel),
-                y: fillArrayWithInitialValues(numberOfAppointments, startSentinel),
-                dy: fillArrayWithInitialValues(numberOfAppointments, durationOrEndSentinel)
+                front: fillArray(numberOfAppointments),
+                back: fillArray(numberOfAppointments),
+                rBack: fillArray(numberOfAppointments, rBackSentinel),
+                rFront: fillArray(numberOfAppointments),
+                dx: fillArray(numberOfAppointments, dxSentinel),
+                x: fillArray(numberOfAppointments, xSentinel),
+                y: fillArray(numberOfAppointments, startSentinel),
+                dy: fillArray(numberOfAppointments, durationOrEndSentinel)
             };
         },
-        finalizeTiling = function CalendarTiler_finalizeTiling(tiling, appointments, appointmentsIn) {
+        finalizeTiling: function CalendarTiler_finalizeTiling(tiling, appointments, appointmentsIn) {
             var i,
                 sortedAppointments = new Array(appointments.length);
 
@@ -327,11 +427,12 @@
                 sortedAppointments: sortedAppointments
             };
         },
-        tileAppointments = function CalendarTiler_tileAppointments(appointmentsIn, tileParameters) {
+        tileAppointments: function CalendarTiler_tileAppointments(appointmentsIn, tileParametersIn) {
             var j,
                 k,
-                appointments = copyRelevantAppointmentData(appointmentsIn, tileParameters),
-                tiling = generateTilingObject(appointments);
+                tileParameters =  calendarTiler.mapTileParameters(tileParametersIn),
+                appointments = calendarTiler.copyRelevantAppointmentData(appointmentsIn, tileParameters),
+                tiling = calendarTiler.generateTilingObject(appointments);
 
             if (appointments.length > 0) {
                 for (j = 0; j < appointments.length; ++j) {
@@ -348,20 +449,20 @@
                     }
                 }
 
-                buildRBack(tiling);
+                calendarTiler.buildRBack(tiling);
             }
 
-            return finalizeTiling(tiling, appointments, appointmentsIn);
-        },
-        calendarTiler = {
-            tileAppointments: function CalendarTiler_initialize(appointmentsIn, tileParametersIn) {
-                if (!Array.isArray(appointmentsIn)) {
-                    throw 'calendarTiler.tileAppointments - 1st argument - appointmentsIn: expects an array.';
-                }
+            return calendarTiler.finalizeTiling(tiling, appointments, appointmentsIn);
+        }
+    };
 
-                return tileAppointments(appointmentsIn,  mapTileParameters(tileParametersIn));
+    window.calendarTiler = {
+        tileAppointments: function CalendarTiler_initialize(appointmentsIn, tileParametersIn) {
+            if (!Array.isArray(appointmentsIn)) {
+                throw 'calendarTiler.tileAppointments - 1st argument - appointmentsIn: expects an array.';
             }
-        };
 
-    window.calendarTiler = calendarTiler;
+            return calendarTiler.tileAppointments(appointmentsIn, tileParametersIn);
+        }
+    };
 }());

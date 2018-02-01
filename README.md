@@ -8,10 +8,10 @@ At work (https://fieldnimble.com/) we needed a way to display the calendars of m
 Please consult the example files to see the full process in action and to how it could be used from start to finish.
 
 There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
-* `appointments` (Required) which is an array of objects (appointments) that need to be tiled they, need to include 2 properties in order to be tiled
+* `appointments` (Required) which is an array of objects (appointments) that need to be tiled they, need to include 2 properties in order to be tiled,
     1. `<START_VALUE>` a number specifying the start of the appointment
-    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number specifying the end of the appointment (or the duration of the appointment) note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>`
-* `tileParameters` (Optional) which is an object that has 3 properties
+    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>`
+* `tileParameters` (Optional) which is an object that has 3 properties,
     1. `start` a string (Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
     2. `delineator` a string (Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
     3. `usesDuration` a Boolean (Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.

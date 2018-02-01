@@ -42,7 +42,7 @@
                 startMinutes = Math.floor(Math.random() * numberOfSubdivisionsPerHour),
                 start = startHour + (startMinutes / numberOfSubdivisionsPerHour),
                 remainingTime = hoursPerDay - start,
-                end = Math.min(hoursPerDay, start + Math.max((Math.floor(Math.random() * remainingTime)), (1 / numberOfSubdivisionsPerHour)));
+                end = Math.min(hoursPerDay, start + Math.max((Math.floor((Math.random() * remainingTime) + 1 / numberOfSubdivisionsPerHour)), (1 / numberOfSubdivisionsPerHour)));
 
             return {
                 start: start,

@@ -104,4 +104,5 @@ div::-webkit-scrollbar {
     border-top: 1px solid #000000;
     height: 50px;
     background-color: #ffffff;
+    margin-top: -3px;
 }
