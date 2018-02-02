@@ -3,11 +3,11 @@
     'use strict';
 
     var calendarTiler,
+        unsetIndexSentinel = -1,
         startSentinel = 0,
-        durationOrEndSentinel = 1,
-        rBackSentinel = -1,
-        dxSentinel = 1,
         xSentinel = 0,
+        durationOrEndSentinel = 1,
+        dxSentinel = 1,
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -36,7 +36,23 @@
                 }
             }
 
-            return -1;
+            return unsetIndexSentinel;
+        },
+        reverseArray = function CalendarTiler_reverseArray(array) {
+            var left,
+                right,
+                temp,
+                length = array.length;
+
+            for (left = 0; left < length / 2; ++left)
+            {
+                right = length - 1 - left;
+                temp = array[left];
+                array[left] = array[right];
+                array[right] = temp;
+            }
+
+            return array;
         };
 
     function DirectedAcylicGraph(numberOrVertices) {
@@ -66,45 +82,56 @@
                         visitVertex(i, visitedVertices);
                     }
                 }
+            },
+            buildPathsThroughVertex = function DirectedAcylicGraph_buildPathsThroughVertex(vertex, incomingVertices) {
+                var i,
+                    j,
+                    fromVertex,
+                    toVertex,
+                    paths = fillArray(numberOrVertices, unsetIndexSentinel);
+
+                if (topologicalOrdering.length === 0) {
+                    topologicalSort();
+                }
+
+                paths[vertex] = 0;
+
+                for (i = topologicalOrdering.length - 1; i >= 0; --i) {
+                    fromVertex = topologicalOrdering[i];
+
+                    if (paths[fromVertex] !== unsetIndexSentinel) {
+                        for (j = 0; j < edges[fromVertex].length; ++j) {
+                            toVertex = edges[fromVertex][j];
+
+                            if (paths[toVertex] <= paths[fromVertex]) {
+                                paths[toVertex] = paths[fromVertex] + 1;
+                                incomingVertices[toVertex] = fromVertex;
+                            }
+                        }
+                    }
+                }
+
+                return paths;
             };
 
         dag.addEdge = function DirectedAcylicGraph_addEdge(fromVertex, toVertex) {
-            if (getFirstIndexOf(toVertex, edges[fromVertex]) === -1) {
+            if (getFirstIndexOf(toVertex, edges[fromVertex]) === unsetIndexSentinel) {
                 edges[fromVertex].push(toVertex);
+
+                if ( topologicalOrdering.length > 0) {
+                    topologicalOrdering = [];
+                }
             }
         };
 
         dag.getLongestPathThroughVertex = function DirectedAcylicGraph_getLongestPathThroughVertex(vertex) {
             var i,
-                j,
-                fromVertex,
-                toVertex,
-                longestPathLength = -1,
-                longestPathIndex = -1,
-                longestPath = [],
+                longestPathLength = unsetIndexSentinel,
+                longestPathIndex = unsetIndexSentinel,
                 incomingVertices = fillArray(numberOrVertices, null),
-                paths = fillArray(numberOrVertices, -1);
+                paths = buildPathsThroughVertex(vertex, incomingVertices),
+                longestPath = [];
 
-            if (topologicalOrdering.length === 0) {
-                topologicalSort();
-            }
-
-            paths[vertex] = 0;
-
-            for (i = topologicalOrdering.length - 1; i >= 0; --i) {
-                fromVertex = topologicalOrdering[i];
-
-                if (paths[fromVertex] !== -1) {
-                    for (j = 0; j < edges[fromVertex].length; ++j) {
-                        toVertex = edges[fromVertex][j];
-
-                        if (paths[toVertex] <= paths[fromVertex]) {
-                            paths[toVertex] = paths[fromVertex] + 1;
-                            incomingVertices[toVertex] = fromVertex;
-                        }
-                    }
-                }
-            }
 
             for (i = paths.length - 1; i >= 0; --i) {
                 if (paths[i] >= longestPathLength) {
@@ -113,7 +140,7 @@
                 }
             }
 
-            if (longestPathIndex > -1) {
+            if (longestPathIndex > unsetIndexSentinel) {
                 longestPath.push(longestPathIndex);
 
                 for (i = 0; i < longestPathLength; ++i) {
@@ -136,7 +163,7 @@
             var i;
 
             for (i = head + 1; i < array.length; ++i) {
-                if (array[i] !== rBackSentinel) {
+                if (array[i] !== unsetIndexSentinel) {
                     return i;
                 }
             }
@@ -175,7 +202,7 @@
         },
         calculateBlockingDx: function CalendarTiler_calculateBlockingDx(tiling, path, index, x) {
             var i,
-                blockingVertexIndex = -1;
+                blockingVertexIndex = unsetIndexSentinel;
 
             for (i = index + 1; i < path.length; ++i) {
                 if (tiling.x[path[i]] !== xSentinel) {
@@ -184,7 +211,7 @@
                 }
             }
 
-            return blockingVertexIndex > -1 ? ((tiling.x[path[blockingVertexIndex]] - x) / (blockingVertexIndex - index)) : undefined;
+            return blockingVertexIndex > unsetIndexSentinel ? ((tiling.x[path[blockingVertexIndex]] - x) / (blockingVertexIndex - index)) : undefined;
         },
         calculateNonBlockingDx: function CalendarTiler_calculateDx(tiling, path) {
             var i,
@@ -259,7 +286,7 @@
                 longestPathThroughVertex = [];
 
             for (i = 0; i < tiling.rFront.length; ++i) {
-                path = backwardDag.getLongestPathThroughVertex(i).concat([i]).concat(forwardDag.getLongestPathThroughVertex(i).reverse());
+                path = backwardDag.getLongestPathThroughVertex(i).concat([i]).concat(reverseArray(forwardDag.getLongestPathThroughVertex(i)));
                 pathKey = path.join();
 
                 if (isUndefined(pathMap[pathKey])) {
@@ -303,15 +330,6 @@
                 }
             }
         },
-        expandRemainingRFront: function CalendarTiler_expandRemainingRFront(tiling) {
-            var i;
-
-            for (i = 0; i < tiling.rFront.length; ++i) {
-                calendarTiler.expandRFront(i, tiling);
-            }
-
-            calendarTiler.buildDirectedAcyclicGraphs(tiling);
-        },
         sharesLinchPin: function CalendarTiler_sharesLinchPin(minFront, index, tiling) {
             var i,
                 linchPin,
@@ -320,7 +338,7 @@
             for (i = rBack.length - 1; i >= 0; --i) {
                 linchPin = rBack[i];
 
-                if (getFirstIndexOf(linchPin, tiling.rFront[index]) > -1) {
+                if (getFirstIndexOf(linchPin, tiling.rFront[index]) > unsetIndexSentinel) {
                     return true;
                 }
             }
@@ -335,11 +353,11 @@
             for (i = 0; i < tiling.back[index].length; ++i) {
                 back = tiling.back[index][i];
 
-                if (getFirstIndexOf(back, tiling.rBack[index]) === -1) {
+                if (getFirstIndexOf(back, tiling.rBack[index]) === unsetIndexSentinel) {
                     calendarTiler.expandRFront(back, tiling);
                     minFront = minFront || back;
 
-                    if (back !== minFront && (getFirstIndexOf(minFront, tiling.rFront[back]) > -1 || calendarTiler.sharesLinchPin(minFront, back, tiling))) {
+                    if (back !== minFront && (getFirstIndexOf(minFront, tiling.rFront[back]) > unsetIndexSentinel || calendarTiler.sharesLinchPin(minFront, back, tiling))) {
                         minFront = back;
                     }
                 }
@@ -359,7 +377,7 @@
                 } else {
                     next = next || calendarTiler.findNextRFrontFromBack(i, tiling);
 
-                    if (tiling.front[i].length > 0 && getFirstIndexOf(next, tiling.back[tiling.front[i][0]]) > -1) {
+                    if (tiling.front[i].length > 0 && getFirstIndexOf(next, tiling.back[tiling.front[i][0]]) > unsetIndexSentinel) {
                         if (tiling.rBack[tiling.front[i][0]].length < tiling.rBack[i].length) {
                             tiling.rFront[i].push(next);
                             next = null;
@@ -373,7 +391,7 @@
                 }
             }
 
-            calendarTiler.expandRemainingRFront(tiling);
+            calendarTiler.buildDirectedAcyclicGraphs(tiling);
         },
         buildRBack: function CalendarTiler_buildRBack(tiling) {
             var next,
@@ -381,8 +399,8 @@
                 tail,
                 path;
 
-            while (getFirstIndexOf(rBackSentinel, tiling.rBack) > -1) {
-                head = getFirstIndexOf(-1, tiling.rBack);
+            while (getFirstIndexOf(unsetIndexSentinel, tiling.rBack) > unsetIndexSentinel) {
+                head = getFirstIndexOf(unsetIndexSentinel, tiling.rBack);
                 tail = calendarTiler.getTail(head, tiling.rBack);
                 path = (head > 0 ? tiling.rBack[head - 1].concat([head - 1]) : []);
 
@@ -401,7 +419,7 @@
             return {
                 front: fillArray(numberOfAppointments),
                 back: fillArray(numberOfAppointments),
-                rBack: fillArray(numberOfAppointments, rBackSentinel),
+                rBack: fillArray(numberOfAppointments, unsetIndexSentinel),
                 rFront: fillArray(numberOfAppointments),
                 dx: fillArray(numberOfAppointments, dxSentinel),
                 x: fillArray(numberOfAppointments, xSentinel),
