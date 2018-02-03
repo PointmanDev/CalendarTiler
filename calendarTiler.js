@@ -97,7 +97,7 @@
                     dags.forward.addEdge(fromVertex, toVertex);
                 }
             },
-            addEEdgesToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEEdgesToDirectedAcyclicGraphs(alignments, dags, fromVertex) {
+            addEdgesToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgesToDirectedAcyclicGraphs(alignments, dags, fromVertex) {
                 var i;
 
                 if (alignments.rBack[fromVertex].length > 0) {
@@ -344,7 +344,7 @@
             };
 
         for (i = 0; i < positions.length; ++i) {
-            timeRespectiveDagBuilder.addEEdgesToDirectedAcyclicGraphs(alignments, dags, i);
+            timeRespectiveDagBuilder.addEdgesToDirectedAcyclicGraphs(alignments, dags, i);
         }
 
         return dags;
@@ -647,8 +647,8 @@
         },
         mapTileParameters: function CalendarTiler_calenderTiler_mapTileParameters(tileParametersIn) {
             var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {},
-                dagBuilderKey = isString(tileParametersIn.widthCalculationMethod) && !isUndefined(dagBuilders[tileParametersIn.widthCalculationMethod])
-                    ? tileParametersIn.widthCalculationMethod
+                dagBuilderKey = isString(tileParametersIn.tilingMethod) && !isUndefined(dagBuilders[tileParametersIn.tilingMethod])
+                    ? tileParametersIn.tilingMethod
                     : 'fillSpace';
 
             return {

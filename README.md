@@ -11,13 +11,17 @@ There's only one public facing function, `window.calendarTiler.tileAppointments`
 * `appointments` (Required) which is an array of objects (appointments) that need to be tiled they, need to include 2 properties in order to be tiled,
     1. `<START_VALUE>` a number specifying the start of the appointment
     2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>`
-* `tileParameters` (Optional) which is an object that has 3 properties,
+* `tileParameters` (Optional) which is an object that has 4 properties,
     1. `start` a string (Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
     2. `delineator` a string (Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
     3. `usesDuration` a Boolean (Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.
+    4. `tilingMethod` a string (Default Value: `fillSpace`) which specifies the way the appointments are tiled
+        * `balanced` this indicates that each appointment should have the same width, it's the fastest of the three options since there are no graph calculations to make, though some of the appointments may not be as wide as they can be which may leave the layout looking a little sparse in some cases.
+        * `fillSpace` this indicates that each appointment should take up as much space as it possibly can while retailing a space efficient layout. It's slower than `balanced` since there are graph calculations to make, but it produces the most aesthetically pleasing result of the three options.
+        * `timeRespective` this indicates that appointments with later start times should always appear as far to the left as possible. It's the slowest of the three options and produces the least aesthetically pleasing layout, but it's the most ordered of the three options.
 
 The output is a single object with 5 properties,
-* `appointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending
+* `sortedAppointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending
 * `x` an array of the x-coordinates for where each appointment should be placed on the x-axis
 * `dx` an array of the widths for how wide each appointment should be on the x-axis
 * `y` an array of the y-coordinates for where each appointment should be placed on the y-axis (note these are just the `start` values of each appointment)
@@ -30,10 +34,12 @@ Please note that the `x` and `dx` values are normalized between 0 and 1 while th
     1. `appointments = [{ start: 0, end: 12 }, { start: 4.5, end: 6.75 }, { start: 13.25, end: 19.5 }]`
 * Passing `tileParameters`,
     1. `appointments = [{ wEirDsTart: 7.5, ohADuration: 21.25 }, { wEirDsTart: 14.25, ohADuration: 16.75 }, { wEirDsTart: 22, ohADuration: 23.75 }]`
-    2. `tileParameters = { start: "wEirDsTart", delineator: "ohADuration", usesDuration: true }`
+    2. `tileParameters = { start: "wEirDsTart", delineator: "ohADuration", usesDuration: true, tilingMethod: "fillSpace" }`
 
 # The Algorithm
-The algorithm works by accepting an array of appointments `A` as an input, where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` and `e_a` can be any real valued numbers with `s_a < e_a` (however `0 < s_a < e_a <= 24` is a typical use case).
+There are actually 3 different algorithms at work here depending on the `tilingMethod` selected.
+
+The algorithms work by accepting an array of appointments `A` as an input, where each appointment `a` has a start value `s_a` and an end value `e_a`. In principal `s_a` and `e_a` can be any real valued numbers with `s_a < e_a` (however `0 < s_a < e_a <= 24` is a typical use case).
 
 The goal of the algorithm is to produce a array `Tiling_A` which for each appointment `a` in `A` contains a 4-dimensional vector `tile_a = (s_a, e_a, x_a, w_a)` where
 * `s_a` is the start value
@@ -50,7 +56,20 @@ The idea being that each appointment `a` can then be placed on the 2-dimensional
 
 So how do we go about producing `Tiling_A`? The idea is to construct a directed acyclic graph (DAG for short) `DAG_A` and use the set of traversals to find `x_a` and `w_a` for each `a` in `A`.
 
-# The Algorithm
+#TL;DR
+* Sort `A` into a new array `Sorted_A` by the following rule, `a <= b iff s_a < s_b or (s_a == s_b and e_a >= e_b)` for `a` and `b` in `A`
+* Either create columns or alignments based on the `tilingMethod`
+* If the `tilingMethod` is `fillSpace` or `timeRespective` then create a DAG
+* If a DAG was created then for each appointment find the longest path in the DAG that crosses though its vertex and set `x_a` and `w_a` using that path.
+* If no DAG was created (i.e. `tilingMethod` is `balanced`) then use the columns to calculate `x_a` and `w_a`.
+
+# Balanced Tiling Method
+When `tilingMethod` is set to `balanced` there are no DAG calculations to make so the process is very simple
+
+# Fill Space Tiling Method
+This tiling method actually begins the same way that the balanced tiling method does.
+
+# Time Respective Tiling Method
 Step 1: Sort `A` into a new array `Sorted_A` by the following rule,
 * `a <= b iff s_a < s_b or (s_a == s_b and e_a >= e_b)` for `a` and `b` in `A`
 This sorting simply means that appointments are sorted in ascending fashion by start time and then in descending fashion by end time should they have equal start times. From now on we'll just assume that `A` is sorted as above so I don't need to keep typing `Sorted_A`.

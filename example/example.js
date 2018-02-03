@@ -14,7 +14,7 @@
         totalNumberOfSubdivisions = hoursPerDay * numberOfSubdivisionsPerHour,
         subdivisions = {},
         tileParameters = {
-            widthCalculationMethod: 'fillSpace',
+            tilingMethod: 'fillSpace',
             usesDuration: false,
             start: 'start',
             delineator: 'end'
@@ -25,7 +25,7 @@
             exampleAppointments: document.getElementById('example-appointments'),
             exampleNumberOfAppointmentsInput: document.getElementById('example-number-of-appointments-input'),
             exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button'),
-            exampleWidthCalculationMethodSelect: document.getElementById('example-width-calculation-method-select'),
+            exampleTilingMethodSelect: document.getElementById('example-tiling-method-select'),
             exampleSchedule: document.getElementById('example-schedule')
         },
         generateSubdivisions = function example_generateSubdivisions() {
@@ -88,7 +88,7 @@
             appointmentWidthModifier = Math.max(adjustedWindowWidth, isFinite(minimalDx) ? (minimumAppointmentWidth / minimalDx) : adjustedWindowWidth);
         },
         tileAppointments = function example_tileAppointments() {
-            tileParameters.widthCalculationMethod = htmlElements.exampleWidthCalculationMethodSelect.value;
+            tileParameters.tilingMethod = htmlElements.exampleTilingMethodSelect.value;
             tiling = window.calendarTiler.tileAppointments(appointments, tileParameters);
         },
         renderAppointments = function example_renderAppointments(wasResized) {
@@ -172,9 +172,9 @@
             });
 
             htmlElements.exampleNumberOfAppointmentsInput.value = numberOfAppointments;
-            htmlElements.exampleWidthCalculationMethodSelect.value = tileParameters.widthCalculationMethod;
+            htmlElements.exampleTilingMethodSelect.value = tileParameters.tilingMethod;
             htmlElements.exampleNumberOfAppointmentsButton.onclick = generateRandomSchedule;
-            htmlElements.exampleWidthCalculationMethodSelect.onchange = drawAppointments;
+            htmlElements.exampleTilingMethodSelect.onchange = drawAppointments;
 
             generateRandomSchedule();
         };
