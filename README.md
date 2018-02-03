@@ -5,7 +5,7 @@ An algorithm for aesthetically displaying appointments/events on a calendar, cur
 At work (https://fieldnimble.com/) we needed a way to display the calendars of many users all at once and have the appointments/visits/events/what-have-you in a clean aesthetically pleasing way. So I designed this algorithm and then implemented it in JS. It's gone through several iterations and eventually ended up the way it is now because it is both space efficient and aesthetically pleasing.
 
 # Usage
-Please consult the example files to see the full process in action and to how it could be used from start to finish.
+Please consult the example files to see the full process in action and to see how it could be used from start to finish.
 
 There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
 * `appointments` [Required] (Type: Array[Object]) that need to be tiled they, need to include 2 properties in order to be tiled,
