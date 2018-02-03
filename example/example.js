@@ -55,14 +55,15 @@
             }
         },
         renderAppointment = function example_renderAppointment(index) {
-            var appointment = document.createElement('div');
+            var positions = tiling.positions[index],
+                appointment = document.createElement('div');
 
             appointment.classList.add('example-appointment');
             appointment.innerHTML = String(index + 1);
-            appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * tiling.dy[index]) - 4 + 'px';
-            appointment.style.top = (tiling.y[index] * numberOfSubdivisionsPerHour * subdivisionHeight) + 2 + 'px';
-            appointment.style.width =  (appointmentWidthModifier * tiling.dx[index]) - 4 + 'px';
-            appointment.style.left = (appointmentWidthModifier * tiling.x[index]) + 2 + 'px';
+            appointment.style.height = (subdivisionHeight * numberOfSubdivisionsPerHour * positions.dy) - 4 + 'px';
+            appointment.style.top = (positions.y * numberOfSubdivisionsPerHour * subdivisionHeight) + 2 + 'px';
+            appointment.style.width =  (appointmentWidthModifier * positions.dx) - 4 + 'px';
+            appointment.style.left = (appointmentWidthModifier * positions.x) + 2 + 'px';
 
             htmlElements.exampleAppointments.appendChild(appointment);
         },
@@ -72,8 +73,8 @@
                 adjustedWindowWidth = window.innerWidth - 100;
 
             for (i = 0; i < numberOfAppointments; ++i) {
-                if (tiling.dx[i] < minimalDx) {
-                    minimalDx = tiling.dx[i];
+                if (tiling.positions[i].dx < minimalDx) {
+                    minimalDx = tiling.positions[i].dx;
                 }
             }
 
