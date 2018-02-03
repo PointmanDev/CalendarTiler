@@ -13,12 +13,19 @@
         numberOfAppointments = 20,
         totalNumberOfSubdivisions = hoursPerDay * numberOfSubdivisionsPerHour,
         subdivisions = {},
+        tileParameters = {
+            widthCalculationMethod: 'fillSpace',
+            usesDuration: false,
+            start: 'start',
+            delineator: 'end'
+        },
         gradientValues = [],
         htmlElements = {
             exampleTimes: document.getElementById('example-times'),
             exampleAppointments: document.getElementById('example-appointments'),
             exampleNumberOfAppointmentsInput: document.getElementById('example-number-of-appointments-input'),
             exampleNumberOfAppointmentsButton: document.getElementById('example-number-of-appointments-button'),
+            exampleWidthCalculationMethodSelect: document.getElementById('example-width-calculation-method-select'),
             exampleSchedule: document.getElementById('example-schedule')
         },
         generateSubdivisions = function example_generateSubdivisions() {
@@ -80,11 +87,19 @@
 
             appointmentWidthModifier = Math.max(adjustedWindowWidth, isFinite(minimalDx) ? (minimumAppointmentWidth / minimalDx) : adjustedWindowWidth);
         },
-        drawAppointments = function example_drawAppointments() {
+        tileAppointments = function example_tileAppointments() {
+            tileParameters.widthCalculationMethod = htmlElements.exampleWidthCalculationMethodSelect.value;
+            tiling = window.calendarTiler.tileAppointments(appointments, tileParameters);
+        },
+        renderAppointments = function example_renderAppointments(wasResized) {
             var i;
 
             cleanAppointments();
             setScheduleWidth();
+
+            if (!wasResized) {
+                tileAppointments();
+            }
 
             for (i = 0; i < numberOfAppointments; ++i) {
                 renderAppointment(i, tiling);
@@ -93,6 +108,12 @@
             for (i = 0; i < totalNumberOfSubdivisions; ++i) {
                 htmlElements.exampleAppointments.children[i].style.width = appointmentWidthModifier + 'px';
             }
+        },
+        drawAppointments = function example_drawAppointments() {
+            renderAppointments();
+        },
+        reDrawAppointments = function example_reDrawAppointments() {
+            renderAppointments(true);
         },
         generateRandomSchedule = function example_generateRandomSchedule() {
             var i;
@@ -104,9 +125,8 @@
                 appointments.push(generateRandomAppointment());
             }
 
-            tiling = window.calendarTiler.tileAppointments(appointments);
+            tileAppointments();
             appointments = tiling.sortedAppointments;
-
             drawAppointments();
         },
         fillGradientValues = function example_fillGradientValues() {
@@ -152,12 +172,15 @@
             });
 
             htmlElements.exampleNumberOfAppointmentsInput.value = numberOfAppointments;
+            htmlElements.exampleWidthCalculationMethodSelect.value = tileParameters.widthCalculationMethod;
             htmlElements.exampleNumberOfAppointmentsButton.onclick = generateRandomSchedule;
+            htmlElements.exampleWidthCalculationMethodSelect.onchange = drawAppointments;
+
             generateRandomSchedule();
         };
 
-    window.addEventListener('resize', drawAppointments);
-    window.addEventListener('orientationchange', drawAppointments);
+    window.addEventListener('resize', reDrawAppointments);
+    window.addEventListener('orientationchange', reDrawAppointments);
 
     initialize();
 }());

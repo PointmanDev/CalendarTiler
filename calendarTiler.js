@@ -3,11 +3,44 @@
     'use strict';
 
     var calendarTiler,
+        positionBuilder,
+        columnBuilder,
+        alignmentBuilder,
         unsetIndexSentinel = -1,
         startSentinel = 0,
         xSentinel = 0,
         durationOrEndSentinel = 1,
         dxSentinel = 1,
+        exceptions = {
+            invalidAppointmentsInArgument: 'calendarTiler.tileAppointments - 1st argument - appointmentsIn: expects an array.',
+            invalidAppointmentValue: function CalendarTiler_exceptions_invalidAppointmentValue(key, index) {
+                return 'calendarTiler.tileAppointments - calendarTiler.copyRelevantAppointmentData - invalid '
+                    + key
+                    + ' on appointment index '
+                    + index
+                    + ' must be a finite number.';
+            },
+            invalidAppointmentDuration: function CalendarTiler_exceptions_invalidAppointmentDuration(key, index) {
+                return 'calendarTiler.tileAppointments - calendarTiler.copyRelevantAppointmentData - calendarTiler.getAppointmentEnd - invalid '
+                    + key
+                    + ' on appointment index '
+                    + index
+                    + ' must be greater than zero.';
+            },
+            invalidAppointmentEnd: function CalendarTiler_exceptions_invalidAppointmentEnd(startKey, endKey, index) {
+                return 'calendarTiler.tileAppointments - calendarTiler.copyRelevantAppointmentData - calendarTiler.getAppointmentEnd - invalid '
+                    + endKey
+                    + ' on appointment index '
+                    + index
+                    + ' must be greater than the corresponding ' + startKey + ' value.';
+            }
+        },
+        isFiniteNumber = function CalendarTiler_functionisFiniteNumber(value) {
+            return !Number.isNaN(value) && Number.isFinite(value);
+        },
+        isNull = function CalendarTiler_isNull(value) {
+            return value === null;
+        },
         isString = function CalendarTiler_isString(value) {
             return typeof value === 'string' || value instanceof String;
         },
@@ -17,7 +50,7 @@
         isUndefined = function CalendarTiler_isUndefined(value) {
             return value === undefined;
         },
-        fillArray = function CalendarTiler_fillArray(numberOfAppointments, initialValue) {
+        fillArray = function CalendarTiler_cfillArray(numberOfAppointments, initialValue) {
             var i,
                 array = [];
 
@@ -53,13 +86,161 @@
             }
 
             return array;
+        },
+        timeRespectiveDagBuilder = {
+            addEdgeToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, toVertex) {
+                if (alignments.rFront[toVertex][0] === fromVertex) {
+                    dags.backward.addEdge(fromVertex, toVertex);
+                }
+
+                if (alignments.rBack[toVertex][alignments.rBack[toVertex].length - 1] === fromVertex) {
+                    dags.forward.addEdge(fromVertex, toVertex);
+                }
+            },
+            addEEdgesToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEEdgesToDirectedAcyclicGraphs(alignments, dags, fromVertex) {
+                var i;
+
+                if (alignments.rBack[fromVertex].length > 0) {
+                    dags.backward.addEdge(fromVertex, alignments.rBack[fromVertex][alignments.rBack[fromVertex].length - 1]);
+                }
+
+                if (alignments.rFront[fromVertex].length > 0) {
+                    dags.forward.addEdge(fromVertex, alignments.rFront[fromVertex][0]);
+                }
+
+                for (i = alignments.rBack.length - 1; i > fromVertex; --i) {
+                    timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
+                }
+
+                for (i = fromVertex - 1; i >= 0; --i) {
+                    timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
+                }
+            }
+        },
+        fillSpaceDagBuilder = {
+            requiresColumns: true,
+            doAppointmentsCollide: function CalendarTiler_fillSpaceDagBuilder_doAppointmentsCollide(appointmentA, appointmentB, inReverse) {
+                var earlierAppointment = inReverse ? appointmentB : appointmentA,
+                    laterAppointment = inReverse ? appointmentA : appointmentB;
+
+                if (!inReverse && laterAppointment.start >= earlierAppointment.end) {
+                    return undefined;
+                }
+
+                if (inReverse && earlierAppointment.start >= laterAppointment.end) {
+                    return undefined;
+                }
+
+                if (earlierAppointment.start === laterAppointment.start
+                        || earlierAppointment.end === laterAppointment.end
+                        || (earlierAppointment.start < laterAppointment.start && earlierAppointment.end > laterAppointment.start)
+                        || (earlierAppointment.start > laterAppointment.start && earlierAppointment.start < laterAppointment.end)) {
+                    return inReverse ? earlierAppointment.sortedIndex : laterAppointment.sortedIndex;
+                }
+
+                return -1;
+            },
+            collideAppointmentIntoColumn: function CalendarTiler_fillSpaceDagBuilder_collideAppointmentIntoColumn(column, appointment, inReverse) {
+                var i,
+                    collisionIndex,
+                    toVertices = [];
+
+                for (i = 0; i < column.length; ++i) {
+                    collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(appointment, column[i], inReverse);
+
+                    if (collisionIndex > -1) {
+                        toVertices.push(collisionIndex);
+                    } else if (isUndefined(collisionIndex)) {
+                        return toVertices.length > 0 ? toVertices : undefined;
+                    }
+                }
+
+                return toVertices.length > 0 ? toVertices : undefined;
+            },
+            getExtendedDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, columnIndex) {
+                var i,
+                    j,
+                    extendedToVertices,
+                    collisionIndex,
+                    toVertices = [];
+
+                for (i = columnIndex + 1; i < columns.length; ++i) {
+                    extendedToVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
+
+                    if (Array.isArray(extendedToVertices)) {
+                        if (extendedToVertices.length > 0) {
+                            for (j = 0; j < extendedToVertices.length; ++j) {
+                                collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(linchPinAppointment, appointments[extendedToVertices[j]]);
+
+                                if (!isUndefined(collisionIndex) && collisionIndex !== -1) {
+                                    return toVertices;
+                                } else {
+                                    toVertices.push(extendedToVertices[j]);
+                                }
+                            }
+                        }
+
+                        return toVertices;
+                    }
+                }
+
+                return toVertices;
+            },
+            getDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, columnIndex) {
+                var i,
+                    toVertices,
+                    linchPinAppointment,
+                    reducedColumnsLength = columns.length - 1;
+
+                for (i = columnIndex + 1; i < columns.length; ++i) {
+                    toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
+
+                    if (Array.isArray(toVertices)) {
+                        linchPinAppointment = appointments[toVertices[0]];
+
+                        if (i < reducedColumnsLength && toVertices.length > 0 && appointment.end > linchPinAppointment.start) {
+                            return toVertices.concat(fillSpaceDagBuilder.getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, i));
+                        }
+
+                        return toVertices;
+                    }
+                }
+
+                return [];
+            },
+            getDirectedAcyclicGraphBackwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphBackwardVertices(columns, appointment, columnIndex) {
+                var i,
+                    toVertices;
+
+                for (i = columnIndex - 1; i >= 0; --i) {
+                    toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment, true);
+
+                    if (Array.isArray(toVertices)) {
+                        return toVertices;
+                    }
+                }
+
+                return [];
+            },
+            addEdgesToDirectedAcyclicGraphs: function CalendarTiler_fillSpaceDagBuilder_addEdgesToDirectedAcyclicGraphs(dag, fromVertex, toVertices) {
+                var i;
+
+                for (i = 0; i < toVertices.length; ++i) {
+                    dag.addEdge(fromVertex, toVertices[i]);
+                }
+            }
+        },
+        dagBuilders = {
+            balanced: null,
+            timeRespective: timeRespectiveDagBuilder,
+            fillSpace: fillSpaceDagBuilder
         };
 
     function DirectedAcylicGraph(numberOrVertices) {
         var dag = this,
             edges = fillArray(numberOrVertices),
             topologicalOrdering = [],
-            visitVertex = function DirectedAcylicGraph_visitVertex(vertex,  visitedVertices) {
+            visitVertex = function CalendarTiler_DirectedAcylicGraph_visitVertex(vertex,  visitedVertices) {
                 var i,
                     edgeSet = edges[vertex];
 
@@ -73,7 +254,7 @@
 
                 topologicalOrdering.push(vertex);
             },
-            topologicalSort = function DirectedAcylicGraph_topologicalSort() {
+            topologicalSort = function CalendarTiler_DirectedAcylicGraph_topologicalSort() {
                 var i,
                     visitedVertices = fillArray(numberOrVertices, false);
 
@@ -83,7 +264,7 @@
                     }
                 }
             },
-            buildPathsThroughVertex = function DirectedAcylicGraph_buildPathsThroughVertex(vertex, incomingVertices) {
+            buildPathsThroughVertex = function CalendarTiler_DirectedAcylicGraph_buildPathsThroughVertex(vertex, incomingVertices) {
                 var i,
                     j,
                     fromVertex,
@@ -114,7 +295,7 @@
                 return paths;
             };
 
-        dag.addEdge = function DirectedAcylicGraph_addEdge(fromVertex, toVertex) {
+        dag.addEdge = function CalendarTiler_DirectedAcylicGraph_addEdge(fromVertex, toVertex) {
             if (getFirstIndexOf(toVertex, edges[fromVertex]) === unsetIndexSentinel) {
                 edges[fromVertex].push(toVertex);
 
@@ -124,7 +305,7 @@
             }
         };
 
-        dag.getLongestPathThroughVertex = function DirectedAcylicGraph_getLongestPathThroughVertex(vertex) {
+        dag.getLongestPathThroughVertex = function CalendarTiler_DirectedAcylicGraph_getLongestPathThroughVertex(vertex) {
             var i,
                 longestPathLength = unsetIndexSentinel,
                 longestPathIndex = unsetIndexSentinel,
@@ -155,198 +336,188 @@
         };
     }
 
-    calendarTiler = {
-        sortAppointments: function CalendarTiler_sortAppointments(a, b) {
-            return a.start - b.start || b.end - a.end;
-        },
-        mapTileParameters: function CalendarTiler_mapTileParameters(tileParametersIn) {
-            var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {};
-
-            return {
-                usesDuration: !!tileParameters.usesDuration,
-                start: isString(tileParameters.start) ? tileParameters.start : 'start',
-                delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
+    timeRespectiveDagBuilder.build = function CalendarTiler_timeRespectiveDagBuilder_build(positions, appointments, alignments) {
+        var i,
+            dags = {
+                backward: new DirectedAcylicGraph(positions.length),
+                forward: new DirectedAcylicGraph(positions.length)
             };
-        },
-        getAppointmentEnd: function CalendarTiler_getAppointmentEnd(appointment, tileParameters) {
-            if (tileParameters.usesDuration) {
-                return (appointment[tileParameters.start] || startSentinel) + (appointment[tileParameters.delineator] || durationOrEndSentinel);
+
+        for (i = 0; i < positions.length; ++i) {
+            timeRespectiveDagBuilder.addEEdgesToDirectedAcyclicGraphs(alignments, dags, i);
+        }
+
+        return dags;
+    };
+
+    fillSpaceDagBuilder.build = function CalendarTiler_fillSpaceDagBuilder_build(positions, appointments, columns) {
+        var i,
+            j,
+            column,
+            dags = {
+                backward: new DirectedAcylicGraph(positions.length),
+                forward: new DirectedAcylicGraph(positions.length)
+            };
+
+        for (i = 0; i < columns.length; ++i) {
+            column = columns[i];
+
+            for (j = 0; j < column.length; ++j) {
+                fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.backward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphBackwardVertices(columns, column[j], i));
+                fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphForwardVertices(appointments, columns, column[j], i));
             }
+        }
 
-            return appointment[tileParameters.delineator] || durationOrEndSentinel;
-        },
-        copyRelevantAppointmentData: function CalendarTiler_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
-            var i,
-                appointments = [];
+        return dags;
+    };
 
-            for (i = appointmentsIn.length - 1; i >= 0; --i) {
-                appointments.push({
-                    appointmentInIndex: i,
-                    start: appointmentsIn[i][tileParameters.start] || startSentinel,
-                    end: calendarTiler.getAppointmentEnd(appointmentsIn[i], tileParameters)
-                });
-            }
+    alignmentBuilder = {
+        getTail: function CalendarTiler_alignmentBuilder_getTail(head, array) {
+            var i;
 
-            appointments.sort(calendarTiler.sortAppointments);
-
-            for (i = appointments.length - 1; i >= 0; --i) {
-                appointments[i].sortedIndex = i;
-            }
-
-            return appointments;
-        },
-        doAppointmentsCollide: function CalendarTiler_doAppointmentsCollide(appointmentA, appointmentB, inReverse) {
-            var earlierAppointment = inReverse ? appointmentB : appointmentA,
-                laterAppointment = inReverse ? appointmentA : appointmentB;
-
-            if (!inReverse && laterAppointment.start >= earlierAppointment.end) {
-                return undefined;
-            }
-
-            if (inReverse && earlierAppointment.start >= laterAppointment.end) {
-                return undefined;
-            }
-
-            if (earlierAppointment.start === laterAppointment.start
-                    || earlierAppointment.end === laterAppointment.end
-                    || (earlierAppointment.start < laterAppointment.start && earlierAppointment.end > laterAppointment.start)
-                    || (earlierAppointment.start > laterAppointment.start && earlierAppointment.start < laterAppointment.end)) {
-                return inReverse ? earlierAppointment.sortedIndex : laterAppointment.sortedIndex;
-            }
-
-            return -1;
-        },
-        collideAppointmentIntoColumn: function CalendarTiler_collideAppointmentIntoColumn(column, appointment, inReverse) {
-            var i,
-                collisionIndex,
-                toVertices = [];
-
-            for (i = 0; i < column.length; ++i) {
-                collisionIndex = calendarTiler.doAppointmentsCollide(appointment, column[i], inReverse);
-
-                if (collisionIndex > -1) {
-                    toVertices.push(collisionIndex);
-                } else if (isUndefined(collisionIndex)) {
-                    return toVertices.length > 0 ? toVertices : undefined;
+            for (i = head + 1; i < array.length; ++i) {
+                if (array[i] !== unsetIndexSentinel) {
+                    return i;
                 }
             }
 
-            return toVertices.length > 0 ? toVertices : undefined;
+            return array.length;
         },
-        getExtendedDirectedAcyclicGraphForwardVertices: function CalendarTiler_getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, columnIndex) {
+        expandRFront: function CalendarTiler_alignmentBuilder_expandRFront(alignments, index) {
+            if (alignments.rFront[index].length === 1) {
+                var next = alignments.rFront[alignments.rFront[index][0]][0];
+
+                while (next) {
+                    alignments.rFront[index].push(next);
+
+                    if (alignments.rFront[next].length > 0) {
+                        next = alignments.rFront[next][0];
+                    } else {
+                        return;
+                    }
+                }
+            }
+        },
+        sharesLinchPin: function CalendarTiler_alignmentBuilder_sharesLinchPin(alignments, minFront, index) {
+            var i,
+                linchPin,
+                rBack = alignments.rBack[minFront];
+
+            for (i = rBack.length - 1; i >= 0; --i) {
+                linchPin = rBack[i];
+
+                if (getFirstIndexOf(linchPin, alignments.rFront[index]) > unsetIndexSentinel) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+        findNextRFrontFromBack: function CalendarTiler_alignmentBuilder_findNextRFrontFromBack(alignments, index) {
+            var i,
+                back,
+                minFront;
+
+            for (i = 0; i < alignments.back[index].length; ++i) {
+                back = alignments.back[index][i];
+
+                if (getFirstIndexOf(back, alignments.rBack[index]) === unsetIndexSentinel) {
+                    alignmentBuilder.expandRFront(alignments, back);
+                    minFront = minFront || back;
+
+                    if (back !== minFront && (getFirstIndexOf(minFront, alignments.rFront[back]) > unsetIndexSentinel || alignmentBuilder.sharesLinchPin(alignments, minFront, back))) {
+                        minFront = back;
+                    }
+                }
+            }
+
+            return minFront;
+        },
+        buildRFront: function CalendarTiler_alignmentBuilder_buildRFront(alignments) {
+            var i,
+                next;
+
+            for (i = 0; i < alignments.rFront.length; ++i) {
+                if (alignments.back[i].length === alignments.rBack[i].length) {
+                    if (alignments.front[i].length > 0 && alignments.rBack[alignments.front[i][0]].length > alignments.rBack[i].length) {
+                        alignments.rFront[i].push(alignments.front[i][0]);
+                    }
+                } else {
+                    next = next || alignmentBuilder.findNextRFrontFromBack(alignments, i);
+
+                    if (alignments.front[i].length > 0 && getFirstIndexOf(next, alignments.back[alignments.front[i][0]]) > unsetIndexSentinel) {
+                        if (alignments.rBack[alignments.front[i][0]].length < alignments.rBack[i].length) {
+                            alignments.rFront[i].push(next);
+                            next = null;
+                        } else {
+                            alignments.rFront[i].push(alignments.front[i][0]);
+                        }
+                    } else {
+                        alignments.rFront[i].push(next);
+                        next = null;
+                    }
+                }
+            }
+        },
+        buildRBack: function CalendarTiler_alignmentBuilder_buildRBack(alignments) {
+            var next,
+                head,
+                tail,
+                path;
+
+            while (getFirstIndexOf(unsetIndexSentinel, alignments.rBack) > unsetIndexSentinel) {
+                head = getFirstIndexOf(unsetIndexSentinel, alignments.rBack);
+                tail = alignmentBuilder.getTail(head, alignments.rBack);
+                path = (head > 0 ? alignments.rBack[head - 1].concat([head - 1]) : []);
+
+                while (head < tail) {
+                    alignments.rBack[head] = path;
+                    next = alignments.front[head][alignments.front[head].length - 1];
+                    head = (next ? (next >= tail ? tail : next + 1) : head + 1);
+                }
+            }
+
+            alignmentBuilder.buildRFront(alignments);
+        },
+        initializeAlignments: function CalendarTiler_alignmentBuilder_initializeAlignments(appointments) {
+            var numberOfAppointments = appointments.length;
+
+            return {
+                front: fillArray(numberOfAppointments),
+                back: fillArray(numberOfAppointments),
+                rBack: fillArray(numberOfAppointments, unsetIndexSentinel),
+                rFront: fillArray(numberOfAppointments)
+            };
+        },
+        buildAppointmentAlignments: function CalendarTiler_alignmentBuilder_buildAppointmentAlignments(appointments) {
             var i,
                 j,
-                extendedToVertices,
-                collisionIndex,
-                toVertices = [];
+                alignments = alignmentBuilder.initializeAlignments(appointments);
 
-            for (i = columnIndex + 1; i < columns.length; ++i) {
-                extendedToVertices = calendarTiler.collideAppointmentIntoColumn(columns[i], appointment);
-
-                if (Array.isArray(extendedToVertices)) {
-                    if (extendedToVertices.length > 0) {
-                        for (j = 0; j < extendedToVertices.length; ++j) {
-                            collisionIndex = calendarTiler.doAppointmentsCollide(linchPinAppointment, appointments[extendedToVertices[j]]);
-
-                            if (!isUndefined(collisionIndex) && collisionIndex !== -1) {
-                                return toVertices;
-                            } else {
-                                toVertices.push(extendedToVertices[j]);
-                            }
+            if (appointments.length > 0) {
+                for (i = 0; i < appointments.length; ++i) {
+                    for (j = i + 1; j < appointments.length; ++j) {
+                        if (appointments[j].start < appointments[i].end) {
+                            alignments.front[i].push(j);
                         }
                     }
 
-                    return toVertices;
-                }
-            }
-
-            return toVertices;
-        },
-        getDirectedAcyclicGraphForwardVertices: function CalendarTiler_getDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, columnIndex) {
-            var i,
-                toVertices,
-                linchPinAppointment,
-                reducedColumnsLength = columns.length - 1;
-
-            for (i = columnIndex + 1; i < columns.length; ++i) {
-                toVertices = calendarTiler.collideAppointmentIntoColumn(columns[i], appointment);
-
-                if (Array.isArray(toVertices)) {
-                    linchPinAppointment = appointments[toVertices[0]];
-
-                    if (i < reducedColumnsLength && toVertices.length > 0 && appointment.end > linchPinAppointment.start) {
-                        return toVertices.concat(calendarTiler.getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, i));
+                    for (j = 0; j < i; ++j) {
+                        if (appointments[j].end > appointments[i].start) {
+                            alignments.back[i].push(j);
+                        }
                     }
-
-                    return toVertices;
                 }
+
+                alignmentBuilder.buildRBack(alignments);
             }
 
-            return [];
-        },
-        getDirectedAcyclicGraphBackwardVertices: function CalendarTiler_getDirectedAcyclicGraphBackwardVertices(columns, appointment, columnIndex) {
-            var i,
-                toVertices;
+            return alignments;
+        }
+    };
 
-            for (i = columnIndex - 1; i >= 0; --i) {
-                toVertices = calendarTiler.collideAppointmentIntoColumn(columns[i], appointment, true);
-
-                if (Array.isArray(toVertices)) {
-                    return toVertices;
-                }
-            }
-
-            return [];
-        },
-        calculateBlockingDx: function CalendarTiler_calculateBlockingDx(positions, path, index, x) {
-            var i,
-                blockingVertexIndex = unsetIndexSentinel;
-
-            for (i = index + 1; i < path.length; ++i) {
-                if (positions[path[i]].x !== xSentinel) {
-                    blockingVertexIndex = i;
-                    break;
-                }
-            }
-
-            return blockingVertexIndex > unsetIndexSentinel ? ((positions[path[blockingVertexIndex]].x - x) / (blockingVertexIndex - index)) : undefined;
-        },
-        calculateNonBlockingDx: function CalendarTiler_calculateDx(positions, path) {
-            var i,
-                unset = 0,
-                dx = 0;
-
-            for (i = 0; i < path.length; ++i) {
-                if (positions[path[i]].dx < dxSentinel) {
-                    dx += positions[path[i]].dx;
-                } else {
-                    ++unset;
-                }
-            }
-
-            return ((1 - dx) / (unset || 1));
-        },
-        setXAndDxValues: function CalendarTiler_setXAndDxValues(positions, path, index) {
-            var previousVertex = path[index - 1],
-                x = isUndefined(previousVertex) ? 0 : (positions[previousVertex].x + positions[previousVertex].dx),
-                dx = calendarTiler.calculateBlockingDx(positions, path, index, x);
-
-            if (positions[path[index]].dx === dxSentinel) {
-                positions[path[index]].x = x;
-                positions[path[index]].dx = isUndefined(dx) ? calendarTiler.calculateNonBlockingDx(positions, path) : dx;
-            }
-        },
-        generateTilingPositions: function CalendarTiler_generateTilingPositions(longestVertexPaths, positions) {
-            var i,
-                j;
-
-            for (i = 0; i < longestVertexPaths.length; ++i) {
-                for (j = 0; j < longestVertexPaths[i].length; ++j) {
-                    calendarTiler.setXAndDxValues(positions, longestVertexPaths[i], j);
-                }
-            }
-        },
-        addAppointmentToColumns: function CalendarTiler_addAppointmentToColumns(columns, appointment) {
+    columnBuilder = {
+        addAppointmentToColumns: function CalendarTiler_columnBuilder_addAppointmentToColumns(columns, appointment) {
             var i,
                 column;
 
@@ -365,7 +536,20 @@
                 columns.push([appointment]);
             }
         },
-        concatenateDirectedAcylicGraphPaths: function CalendarTiler_concatenateDirectedAcylicGraphPaths(dags, positions) {
+        buildAppointmentColumns: function CalendarTiler_columnBuilder_buildAppointmentColumns(appointments) {
+            var i,
+                columns = [[appointments[0]]];
+
+            for (i = 1; i < appointments.length; ++i) {
+                columnBuilder.addAppointmentToColumns(columns, appointments[i]);
+            }
+
+            return columns;
+        }
+    };
+
+    positionBuilder = {
+        generateLongestVertexPaths: function CalendarTiler_positionBuilder_generateLongestVertexPaths(positions, dags) {
             var i,
                 path,
                 pathKey,
@@ -382,48 +566,148 @@
                 }
             }
 
-            return longestPathsThroughVertices;
-        },
-        addEdgesToDirectedAcyclicGraphs: function CalendarTiler_addEdgesToDirectedAcyclicGraphs(dag, fromVertex, toVertices) {
-            var i;
-
-            for (i = 0; i < toVertices.length; ++i) {
-                dag.addEdge(fromVertex, toVertices[i]);
-            }
-        },
-        buildDirectedAcyclicGraphs: function CalendarTiler_buildDirectedAcyclicGraphs(appointments, columns, positions) {
-            var i,
-                j,
-                column,
-                dags = {
-                    backward: new DirectedAcylicGraph(positions.length),
-                    forward: new DirectedAcylicGraph(positions.length)
-                };
-
-            for (i = 0; i < columns.length; ++i) {
-                column = columns[i];
-
-                for (j = 0; j < column.length; ++j) {
-                    calendarTiler.addEdgesToDirectedAcyclicGraphs(dags.backward, column[j].sortedIndex, calendarTiler.getDirectedAcyclicGraphBackwardVertices(columns, column[j], i));
-                    calendarTiler.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, calendarTiler.getDirectedAcyclicGraphForwardVertices(appointments, columns, column[j], i));
-                }
-            }
-
-            return dags;
-        },
-        generateLongestVertexPaths: function CalendarTiler_generateLongestVertexPaths(positions, appointments) {
-            var i,
-                columns = [[appointments[0]]];
-
-            for (i = 1; i < appointments.length; ++i) {
-                calendarTiler.addAppointmentToColumns(columns, appointments[i]);
-            }
-
-            return calendarTiler.concatenateDirectedAcylicGraphPaths(calendarTiler.buildDirectedAcyclicGraphs(appointments, columns, positions), positions).sort(function (a, b) {
+            return longestPathsThroughVertices.sort(function (a, b) {
                 return b.length - a.length;
             });
         },
-        initializeTilingObject: function CalendarTiler_initializeTilingObject(appointments, appointmentsIn) {
+        calculateBlockingDx: function CalendarTiler_positionBuilder_calculateBlockingDx(positions, path, index, x) {
+            var i,
+                blockingVertexIndex = unsetIndexSentinel;
+
+            for (i = index + 1; i < path.length; ++i) {
+                if (positions[path[i]].x !== xSentinel) {
+                    blockingVertexIndex = i;
+                    break;
+                }
+            }
+
+            return blockingVertexIndex > unsetIndexSentinel ? ((positions[path[blockingVertexIndex]].x - x) / (blockingVertexIndex - index)) : undefined;
+        },
+        calculateNonBlockingDx: function CalendarTiler_positionBuilder_calculateDx(positions, path) {
+            var i,
+                unset = 0,
+                dx = 0;
+
+            for (i = 0; i < path.length; ++i) {
+                if (positions[path[i]].dx < dxSentinel) {
+                    dx += positions[path[i]].dx;
+                } else {
+                    ++unset;
+                }
+            }
+
+            return ((1 - dx) / (unset || 1));
+        },
+        setPosition: function CalendarTiler_positionBuilder_setPosition(positions, path, index) {
+            var previousVertex = path[index - 1],
+                x = isUndefined(previousVertex) ? 0 : (positions[previousVertex].x + positions[previousVertex].dx),
+                dx = positionBuilder.calculateBlockingDx(positions, path, index, x);
+
+            if (positions[path[index]].dx === dxSentinel) {
+                positions[path[index]].x = x;
+                positions[path[index]].dx = isUndefined(dx) ? positionBuilder.calculateNonBlockingDx(positions, path) : dx;
+            }
+        },
+        generatePositionsFromDags: function CalendarTiler_positionBuilder_generatePositionsFromDags(positions, dags) {
+            var i,
+                j,
+                longestVertexPaths = positionBuilder.generateLongestVertexPaths(positions, dags);
+
+            for (i = 0; i < longestVertexPaths.length; ++i) {
+                for (j = 0; j < longestVertexPaths[i].length; ++j) {
+                    positionBuilder.setPosition(positions, longestVertexPaths[i], j);
+                }
+            }
+        },
+        generatePositionsFromColumns: function CalendarTiler_positionBuilder_generatePositionsFromColumns(positions, columns) {
+            var i,
+                j,
+                column,
+                positionIndex,
+                columnPosition,
+                columnsLength = columns.length,
+                columnWidth = 1 / columnsLength;
+
+            for (i = columnsLength - 1; i >= 0; --i) {
+                column = columns[i];
+                columnPosition = i / columnsLength;
+
+                for (j = column.length - 1; j >= 0; --j) {
+                    positionIndex = column[j].sortedIndex;
+                    positions[positionIndex].x = columnPosition;
+                    positions[positionIndex].dx = columnWidth;
+                }
+            }
+        }
+    };
+
+    calendarTiler = {
+        sortAppointments: function CalendarTiler_calenderTiler_sortAppointments(a, b) {
+            return a.start - b.start || b.end - a.end;
+        },
+        mapTileParameters: function CalendarTiler_calenderTiler_mapTileParameters(tileParametersIn) {
+            var tileParameters = isObject(tileParametersIn) ? tileParametersIn : {},
+                dagBuilderKey = isString(tileParametersIn.widthCalculationMethod) && !isUndefined(dagBuilders[tileParametersIn.widthCalculationMethod])
+                    ? tileParametersIn.widthCalculationMethod
+                    : 'fillSpace';
+
+            return {
+                dagBuilder: dagBuilders[dagBuilderKey],
+                usesDuration: !!tileParameters.usesDuration,
+                start: isString(tileParameters.start) ? tileParameters.start : 'start',
+                delineator: isString(tileParameters.delineator) ? tileParameters.delineator : 'end'
+            };
+        },
+        isValiidAppointmentValue: function CalendarTiler_calenderTiler_isValiidAppointmentValue(value, key, index) {
+            if (!isFiniteNumber(value)) {
+                throw exceptions.invalidAppointmentValue(key, index);
+            }
+
+            return true;
+        },
+        getAppointmentEnd: function CalendarTiler_calenderTiler_getAppointmentEnd(startValue, appointmentIn, tileParameters, index) {
+            var delineatorValue = appointmentIn[tileParameters.delineator];
+
+            if (calendarTiler.isValiidAppointmentValue(delineatorValue, tileParameters.delineator, index)) {
+                if (tileParameters.usesDuration) {
+                    if (delineatorValue <= 0) {
+                        throw exceptions.invalidAppointmentDuration(tileParameters.delineator, index);
+                    } else {
+                        return startValue + delineatorValue;
+                    }
+                } else if (delineatorValue <= startValue) {
+                    throw exceptions.invalidAppointmentEnd(tileParameters.start, tileParameters.end, index);
+                } else {
+                    return delineatorValue;
+                }
+            }
+
+            return durationOrEndSentinel;
+        },
+        copyRelevantAppointmentData: function CalendarTiler_calenderTiler_copyRelevantAppointmentData(appointmentsIn, tileParameters) {
+            var i,
+                startValue,
+                appointments = [];
+
+            for (i = appointmentsIn.length - 1; i >= 0; --i) {
+                startValue = appointmentsIn[i][tileParameters.start];
+
+                appointments.push({
+                    appointmentInIndex: i,
+                    start: calendarTiler.isValiidAppointmentValue(startValue, tileParameters.start, i) ? startValue : startSentinel,
+                    end: calendarTiler.getAppointmentEnd(startValue, appointmentsIn[i], tileParameters, i)
+                });
+            }
+
+            appointments.sort(calendarTiler.sortAppointments);
+
+            for (i = appointments.length - 1; i >= 0; --i) {
+                appointments[i].sortedIndex = i;
+            }
+
+            return appointments;
+        },
+        initializeTilingObject: function CalendarTiler_calenderTiler_initializeTilingObject(appointments, appointmentsIn) {
             var i,
                 tiling = {
                     positions: [],
@@ -435,7 +719,7 @@
                     dx: dxSentinel,
                     x: xSentinel,
                     y: appointments[i].start,
-                    dy: appointments[i].end - appointments[i].start,
+                    dy: appointments[i].end - appointments[i].start
                 });
 
                 tiling.sortedAppointments[i] = appointmentsIn[appointments[i].appointmentInIndex];
@@ -443,21 +727,28 @@
 
             return tiling;
         },
-        tileAppointments: function CalendarTiler_tileAppointments(appointmentsIn, tileParametersIn) {
+        tileAppointments: function CalendarTiler_calenderTiler_tileAppointments(appointmentsIn, tileParametersIn) {
             var tileParameters =  calendarTiler.mapTileParameters(tileParametersIn),
                 appointments = calendarTiler.copyRelevantAppointmentData(appointmentsIn, tileParameters),
-                tiling = calendarTiler.initializeTilingObject(appointments, appointmentsIn);
+                tiling = calendarTiler.initializeTilingObject(appointments, appointmentsIn),
+                columnsOrAlignments = isNull(tileParameters.dagBuilder) || tileParameters.dagBuilder.requiresColumns ? columnBuilder.buildAppointmentColumns(appointments) : alignmentBuilder.buildAppointmentAlignments(appointments);
 
-            calendarTiler.generateTilingPositions(appointmentsIn.length > 0 ? calendarTiler.generateLongestVertexPaths(tiling.positions, appointments) : [], tiling.positions);
+            if (appointments.length > 0) {
+                if (isNull(tileParameters.dagBuilder)) {
+                    positionBuilder.generatePositionsFromColumns(tiling.positions, columnsOrAlignments);
+                } else {
+                    positionBuilder.generatePositionsFromDags(tiling.positions, tileParameters.dagBuilder.build(tiling.positions, appointments, columnsOrAlignments));
+                }
+            }
 
             return tiling;
         }
     };
 
     window.calendarTiler = {
-        tileAppointments: function CalendarTiler_initialize(appointmentsIn, tileParametersIn) {
+        tileAppointments: function CalendarTiler_calenderTiler_initialize(appointmentsIn, tileParametersIn) {
             if (!Array.isArray(appointmentsIn)) {
-                throw 'calendarTiler.tileAppointments - 1st argument - appointmentsIn: expects an array.';
+                throw exceptions.invalidAppointmentsInArgument;
             }
 
             return calendarTiler.tileAppointments(appointmentsIn, tileParametersIn);
