@@ -56,7 +56,7 @@ The idea being that each appointment `a` can then be placed on the 2-dimensional
 
 So how do we go about producing `Tiling_A`? The idea is to construct a directed acyclic graph (DAG for short) `DAG_A` and use the set of traversals to find `x_a` and `w_a` for each `a` in `A`.
 
-#TL;DR
+# TL;DR
 * Sort `A` into a new array `Sorted_A` by the following rule, `a <= b iff s_a < s_b or (s_a == s_b and e_a >= e_b)` for `a` and `b` in `A`
 * Either create columns or alignments based on the `tilingMethod`
 * If the `tilingMethod` is `fillSpace` or `timeRespective` then create a DAG
