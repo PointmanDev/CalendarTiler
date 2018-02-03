@@ -233,14 +233,51 @@
 
             return toVertices.length > 0 ? toVertices : undefined;
         },
-        getDirectedAcyclicGraphForwardVertices: function CalendarTiler_getDirectedAcyclicGraphForwardVertices(columns, appointment, columnIndex) {
+        getExtendedDirectedAcyclicGraphForwardVertices: function CalendarTiler_getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, columnIndex) {
             var i,
-                toVertices;
+                j,
+                extendedToVertices,
+                collisionIndex,
+                toVertices = [];
+
+            for (i = columnIndex + 1; i < columns.length; ++i) {
+                extendedToVertices = calendarTiler.collideAppointmentIntoColumn(columns[i], appointment);
+
+                if (Array.isArray(extendedToVertices)) {
+                    if (extendedToVertices.length > 0) {
+                        for (j = 0; j < extendedToVertices.length; ++j) {
+                            collisionIndex = calendarTiler.doAppointmentsCollide(linchPinAppointment, appointments[extendedToVertices[j]]);
+
+                            if (!isUndefined(collisionIndex) && collisionIndex !== -1) {
+                                return toVertices;
+                            } else {
+                                toVertices.push(extendedToVertices[j]);
+                            }
+                        }
+                    }
+
+                    return toVertices;
+                }
+            }
+
+            return toVertices;
+        },
+        getDirectedAcyclicGraphForwardVertices: function CalendarTiler_getDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, columnIndex) {
+            var i,
+                toVertices,
+                linchPinAppointment,
+                reducedColumnsLength = columns.length - 1;
 
             for (i = columnIndex + 1; i < columns.length; ++i) {
                 toVertices = calendarTiler.collideAppointmentIntoColumn(columns[i], appointment);
 
                 if (Array.isArray(toVertices)) {
+                    linchPinAppointment = appointments[toVertices[0]];
+
+                    if (i < reducedColumnsLength && toVertices.length > 0 && appointment.end > linchPinAppointment.start) {
+                        return toVertices.concat(calendarTiler.getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, i));
+                    }
+
                     return toVertices;
                 }
             }
@@ -354,7 +391,7 @@
                 dag.addEdge(fromVertex, toVertices[i]);
             }
         },
-        buildDirectedAcyclicGraphs: function CalendarTiler_buildDirectedAcyclicGraphs(columns, positions) {
+        buildDirectedAcyclicGraphs: function CalendarTiler_buildDirectedAcyclicGraphs(appointments, columns, positions) {
             var i,
                 j,
                 column,
@@ -368,7 +405,7 @@
 
                 for (j = 0; j < column.length; ++j) {
                     calendarTiler.addEdgesToDirectedAcyclicGraphs(dags.backward, column[j].sortedIndex, calendarTiler.getDirectedAcyclicGraphBackwardVertices(columns, column[j], i));
-                    calendarTiler.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, calendarTiler.getDirectedAcyclicGraphForwardVertices(columns, column[j], i));
+                    calendarTiler.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, calendarTiler.getDirectedAcyclicGraphForwardVertices(appointments, columns, column[j], i));
                 }
             }
 
@@ -382,7 +419,7 @@
                 calendarTiler.addAppointmentToColumns(columns, appointments[i]);
             }
 
-            return calendarTiler.concatenateDirectedAcylicGraphPaths(calendarTiler.buildDirectedAcyclicGraphs(columns, positions), positions).sort(function (a, b) {
+            return calendarTiler.concatenateDirectedAcylicGraphPaths(calendarTiler.buildDirectedAcyclicGraphs(appointments, columns, positions), positions).sort(function (a, b) {
                 return b.length - a.length;
             });
         },
