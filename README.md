@@ -8,26 +8,27 @@ At work (https://fieldnimble.com/) we needed a way to display the calendars of m
 Please consult the example files to see the full process in action and to how it could be used from start to finish.
 
 There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
-* `appointments` (Required) which is an array of objects (appointments) that need to be tiled they, need to include 2 properties in order to be tiled,
-    1. `<START_VALUE>` a number specifying the start of the appointment
-    2. `<END_VALUE>` (or `<DURATION_VALUE>`) a number specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>`
-* `tileParameters` (Optional) which is an object that has 4 properties,
-    1. `start` a string (Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
-    2. `delineator` a string (Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
-    3. `usesDuration` a Boolean (Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.
-    4. `tilingMethod` a string (Default Value: `fillSpace`) which specifies the way the appointments are tiled
-        * `balanced` this indicates that each appointment should have the same width, it's the fastest of the three options since there are no graph calculations to make, though some of the appointments may not be as wide as they can be which may leave the layout looking a little sparse in some cases.
+* `appointments` [Required] (Type: Array<Object>) that need to be tiled they, need to include 2 properties in order to be tiled,
+    1. `<START_VALUE>` (Type: number) specifying the start of the appointment
+    2. `<END_VALUE>` (or `<DURATION_VALUE>`) (Type: number) specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>` and if you are using durational units then `<DURATION_VALUE>` must be greater than 0.
+* `tileParameters` (Type: object) that has 4 properties,
+    1. `start` (Type: string - Default Value: `"start"`) which specifies the property `<START_VALUE>` for each appointment (e.g. `"start"`, `"startTime"`, `"startingTime"`, etc.)
+    2. `delineator` (Type: string - Default Value: `"end"`) which specifies the property `<END_VALUE>` (or `<DURATION_VALUE>`) for each appointment (e.g. `"end"`, `"endTime"`, `"endingTime"`, `"duration"`, `"appointmentLength"` etc.)
+    3. `usesDuration` (Type: Boolean - Default Value: `false`) which specifies that the `delineator` represents a durational unit as opposed to a time unit.
+    4. `tilingMethod` (Type: string - Default Value: `fillSpace`) which specifies the way the appointments are tiled
+        * `balanced` this indicates that each appointment should have the same width, it's the fastest of the three options since there are no graph calculations to make, though some of the appointments may not be as wide as they can be, which may leave the layout looking a little sparse in some cases.
         * `fillSpace` this indicates that each appointment should take up as much space as it possibly can while retailing a space efficient layout. It's slower than `balanced` since there are graph calculations to make, but it produces the most aesthetically pleasing result of the three options.
-        * `timeRespective` this indicates that appointments with later start times should always appear as far to the left as possible. It's the slowest of the three options and produces the least aesthetically pleasing layout, but it's the most ordered of the three options.
+        * `timeRespective` this indicates that appointments with later start times should always appear as far to the left as possible. It's the slowest of the three options and the layout it produces is somewhat of an acquired taste, but it's the most rigidly ordered of the three options.
 
-The output is a single object with 5 properties,
-* `sortedAppointments` an array containing the input appointments sorted into a new array by `start` ascending and `end` descending
-* `x` an array of the x-coordinates for where each appointment should be placed on the x-axis
-* `dx` an array of the widths for how wide each appointment should be on the x-axis
-* `y` an array of the y-coordinates for where each appointment should be placed on the y-axis (note these are just the `start` values of each appointment)
-* `dy` an array of the heights for how tall each appointment should be on the y-axis (note these are just `end` - `start` or `duration` for each appointment)
+The output is a single object with 2 properties,
+* `sortedAppointments` (Type: Array<Object>) containing the input appointments sorted into a new array by `start` ascending and `end` descending
+* `positions` (Type: Array<Object>) in the same order as the `sortedAppointments` order, each member contains 4 properties
+    1. `x` (Type: number) the x-coordinate for where the sorted appointment should be placed on the x-axis
+    2. `dx` (Type: number) the width for how wide the sorted appointment should be on the x-axis
+    3. `y` (Type: number) the y-coordinate for where the sorted appointment should be placed on the y-axis (note is this just `start` of the appointment)
+    4. `dy` (Type: number) the height for how tall the sorted appointment should be on the y-axis (note this is just `end` - `start` or `duration` for the appointment)
 
-Please note that the `x` and `dx` values are normalized between 0 and 1 while the `y` and `dy` keep the units of the input appointments.
+Please note that the `x` and `dx` values are normalized between 0 and 1, while the `y` and `dy` keep the units of the input appointments.
 
 # Input Examples
 * Using default `tileParameters`,
@@ -63,8 +64,10 @@ So how do we go about producing `Tiling_A`? The idea is to construct a directed 
 * If a DAG was created then for each appointment find the longest path in the DAG that crosses though its vertex and set `x_a` and `w_a` using that path.
 * If no DAG was created (i.e. `tilingMethod` is `balanced`) then use the columns to calculate `x_a` and `w_a`.
 
+(Note: I'm still working on writing up the remaining sections, so some parts may be incomplete.)
+
 # Balanced Tiling Method
-When `tilingMethod` is set to `balanced` there are no DAG calculations to make so the process is very simple
+When `tilingMethod` is set to `balanced` there are no DAG calculations to make so the process is very simple.
 
 # Fill Space Tiling Method
 This tiling method actually begins the same way that the balanced tiling method does.
