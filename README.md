@@ -24,10 +24,13 @@ At work (https://fieldnimble.com/) we needed a way to display the calendars of m
 
 How Use
 =================
+Using npm: (https://www.npmjs.com/package/calendar-tiler)
+`npm install calendar-tiler`
+
 Please consult the example files to see the full process in action and to see how it could be used from start to finish.
 
-There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
-* `appointments` [Required] (Type: Array[Object]) objects to be tiled, each appointment needs to include 2 properties,
+There's only one public facing function, `calendarTiler.tileAppointments`, it can be called with two parameters,
+* `appointments` (Required) (Type: array[object]) objects to be tiled, each appointment needs to include 2 properties,
     1. `<START_VALUE>` (Type: number) specifying the start of the appointment
     2. `<END_VALUE>` (or `<DURATION_VALUE>`) (Type: number) specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>` and if you are using durational units then `<DURATION_VALUE>` must be greater than 0.
 * `tileParameters` (Type: object) that has 4 properties,
@@ -37,11 +40,11 @@ There's only one public facing function, `window.calendarTiler.tileAppointments`
     4. `tilingMethod` (Type: string - Default Value: `fillSpace`) which specifies the way the appointments are tiled
         * `balanced` this indicates that each appointment should have the same width, it's the fastest of the three options since there are no graph calculations to make, though some of the appointments may not be as wide as they can be, which may leave the layout looking a little sparse in some cases.
         * `fillSpace` this indicates that each appointment should take up as much space as it possibly can while retailing a space efficient layout. It's slower than `balanced` since there are graph calculations to make, but it produces the most aesthetically pleasing result of the three options.
-        * `timeRespective` this indicates that appointments with later start times should always appear as far to the left as possible. It's the slowest of the three options and the layout it produces is somewhat of an acquired taste (straight up ugly in cases with large numbers of appointments. Combining this with the slowness in computation using this method, makes me suspicious that reality has some inherent aesthetic bias towards other methods.), but it's the most rigidly ordered of the three options.
+        * `timeRespective` this indicates that appointments with later start times should always appear as far to the left as possible. It's the slowest of the three options and the layout it produces is somewhat of an acquired taste (straight up ugly in cases with large numbers of appointments. Combining this with the slowness in computation using this method, makes me suspicious that reality has some inherent aesthetic bias towards other methods), but it's the most rigidly ordered of the three options.
 
 The output is a single object with 2 properties,
-* `sortedAppointments` (Type: Array[Object]) containing the input appointments sorted into a new array by `start` ascending and `end` descending
-* `positions` (Type: Array[Object]) in the same order as the `sortedAppointments` order, each member contains 4 properties
+* `sortedAppointments` (Type: array[object]) containing the input appointments sorted into a new array by `start` ascending and `end` descending
+* `positions` (Type: array[object]) in the same order as the `sortedAppointments` order, each member contains 4 properties
     1. `x` (Type: number) the x-coordinate for where the sorted appointment should be placed on the x-axis
     2. `dx` (Type: number) the width for how wide the sorted appointment should be on the x-axis
     3. `y` (Type: number) the y-coordinate for where the sorted appointment should be placed on the y-axis (note is this just `start` of the appointment)
