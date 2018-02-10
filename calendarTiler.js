@@ -1,5 +1,13 @@
-/*global window*/
-(function () {
+/*global define, module, self*/
+(function (root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        define([], factory);
+    } else if (typeof module === 'object' && module.exports) {
+        module.exports = factory();
+    } else {
+        root.calendarTiler = factory();
+    }
+}(typeof self !== 'undefined' ? self : this, function () {
     'use strict';
 
     var calendarTiler,
@@ -745,7 +753,7 @@
         }
     };
 
-    window.calendarTiler = {
+    return {
         tileAppointments: function CalendarTiler_calenderTiler_initialize(appointmentsIn, tileParametersIn) {
             if (!Array.isArray(appointmentsIn)) {
                 throw exceptions.invalidAppointmentsInArgument;
@@ -754,4 +762,4 @@
             return calendarTiler.tileAppointments(appointmentsIn, tileParametersIn);
         }
     };
-}());
+}));

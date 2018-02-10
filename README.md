@@ -11,11 +11,11 @@ Table of Contents
   * [How Use](#how-use)
   * [Algorithm Preface](#algorithm-preface)
   * [Algorithm Overview](#algorithm-overview)
-  * [Examples With Diagrams](@examples-with-diagrams)
-  * [Building Columns](#building-columns)
-  * [Building Alignments](#building-alignments)
-  * [Building Fill Space Directed Acyclic Graphs](#building-fill-space-directed-acyclic-graphs)
-  * [Building Time Respective Directed Acyclic Graphs](#building-time-respective-directed-acyclic-graphs)
+    * [Examples With Diagrams](@examples-with-diagrams)
+    * [Building Columns](#building-columns)
+    * [Building Alignments](#building-alignments)
+    * [Building Fill Space Directed Acyclic Graphs](#building-fill-space-directed-acyclic-graphs)
+    * [Building Time Respective Directed Acyclic Graphs](#building-time-respective-directed-acyclic-graphs)
   * [Conclusions](#conclusions)
 
 Why Do
@@ -27,7 +27,7 @@ How Use
 Please consult the example files to see the full process in action and to see how it could be used from start to finish.
 
 There's only one public facing function, `window.calendarTiler.tileAppointments`, it can be called with two parameters,
-* `appointments` [Required] (Type: Array[Object]) that need to be tiled they, need to include 2 properties in order to be tiled,
+* `appointments` [Required] (Type: Array[Object]) objects to be tiled, each appointment needs to include 2 properties,
     1. `<START_VALUE>` (Type: number) specifying the start of the appointment
     2. `<END_VALUE>` (or `<DURATION_VALUE>`) (Type: number) specifying the end of the appointment (or the duration of the appointment), note that if you are not using durational units, then `<END_VALUE>` must be greater than `<START_VALUE>` and if you are using durational units then `<DURATION_VALUE>` must be greater than 0.
 * `tileParameters` (Type: object) that has 4 properties,
