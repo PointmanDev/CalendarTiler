@@ -25,7 +25,7 @@ At work (https://fieldnimble.com/) we needed a way to display the calendars of m
 How Use
 =================
 Using npm: (https://www.npmjs.com/package/calendar-tiler)
-`npm install calendar-tiler`
+* `npm install calendar-tiler`
 
 Please consult the example files to see the full process in action and to see how it could be used from start to finish.
 
