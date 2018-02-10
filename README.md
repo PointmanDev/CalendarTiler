@@ -49,7 +49,7 @@ The output is a single object with 2 properties,
 
 Please note that the `x` and `dx` values are normalized between 0 and 1, while the `y` and `dy` keep the units of the input appointments.
 
-Input Examples ... 
+Input Examples ...
 * Using default `tileParameters`,
     1. `appointments = [{ start: 0, end: 12 }, { start: 4.5, end: 6.75 }, { start: 13.25, end: 19.5 }]`
 * Passing `tileParameters`,
@@ -96,7 +96,7 @@ The balanced and fill space tiling methods both begin the same way.
 The time respective method generates what can best be described as alignments as opposed to the columns in the other methods.
 * The alignments are a series of rules which describe how one appointment "locks in" other appointments with respect to the appointments before and after it in the sort order.
 
-NOTE: The procedures for obtaining the columns/alignments are detailed in (#building-columns) and (#building-alignments) respectively.
+NOTE: The procedures for obtaining the columns/alignments are detailed in [Building Columns](#building-columns) and [Building Alignments](#building-alignments) respectively.
 
 In the case of the balanced method the `x` and `dx` values are easily computed using the columns by proceeding as follows,
 * Iterate over the columns, `x_a = index / columns.length` for all `a` in `columns[index]`
@@ -104,7 +104,7 @@ In the case of the balanced method the `x` and `dx` values are easily computed u
 
 At this point the balanced method is finished and `Positon_A` is complete.
 
-In the case of the fill space and time respective methods, it's a bit more complicated. The first step is to create two Directed Acyclic Graphs (DAG for short) using either the columns or alignments. The procedures for building these can be found in (#building-fill-space-directed-acyclic-graphs) and in (#building-time-respective-directed-acyclic-graphs) respectively. The first DAG, will be referred to as `backward` and is constructed by moving through the columns or alignments backwards. The second DAG, will be referred to as `forward` and is constructed by moving through the columns in ascending fashion.
+In the case of the fill space and time respective methods, it's a bit more complicated. The first step is to create two Directed Acyclic Graphs (DAG for short) using either the columns or alignments. The procedures for building these can be found in [Building Fill Space Directed Acyclic Graphs](#building-fill-space-directed-acyclic-graphs) and [Building Time Respective Directed Acyclic Graphs](#building-time-respective-directed-acyclic-graphs) respectively. The first DAG, will be referred to as `backward` and is constructed by moving through the columns or alignments backwards. The second DAG, will be referred to as `forward` and is constructed by moving through the columns in ascending fashion.
 
 The reason for needing two DAGs is simple, we need to find the longest chain of colliding appointments for which `a` is a part of for each `a` in `A`.
 
