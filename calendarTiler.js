@@ -236,11 +236,11 @@
             fillSpace: fillSpaceDagBuilder
         };
 
-    function DirectedAcylicGraph(numberOrVertices) {
+    function DirectedAcyclicGraph(numberOrVertices) {
         var dag = this,
             edges = fillArray(numberOrVertices),
             topologicalOrdering = [],
-            visitVertex = function CalendarTiler_DirectedAcylicGraph_visitVertex(vertex,  visitedVertices) {
+            visitVertex = function CalendarTiler_DirectedAcyclicGraph_visitVertex(vertex,  visitedVertices) {
                 var i,
                     edgeSet = edges[vertex];
 
@@ -254,7 +254,7 @@
 
                 topologicalOrdering.push(vertex);
             },
-            topologicalSort = function CalendarTiler_DirectedAcylicGraph_topologicalSort() {
+            topologicalSort = function CalendarTiler_DirectedAcyclicGraph_topologicalSort() {
                 var i,
                     visitedVertices = fillArray(numberOrVertices, false);
 
@@ -264,7 +264,7 @@
                     }
                 }
             },
-            buildPathsThroughVertex = function CalendarTiler_DirectedAcylicGraph_buildPathsThroughVertex(vertex, incomingVertices) {
+            buildPathsThroughVertex = function CalendarTiler_DirectedAcyclicGraph_buildPathsThroughVertex(vertex, incomingVertices) {
                 var i,
                     j,
                     fromVertex,
@@ -295,17 +295,17 @@
                 return paths;
             };
 
-        dag.addEdge = function CalendarTiler_DirectedAcylicGraph_addEdge(fromVertex, toVertex) {
+        dag.addEdge = function CalendarTiler_DirectedAcyclicGraph_addEdge(fromVertex, toVertex) {
             if (getFirstIndexOf(toVertex, edges[fromVertex]) === unsetIndexSentinel) {
                 edges[fromVertex].push(toVertex);
 
-                if ( topologicalOrdering.length > 0) {
+                if (topologicalOrdering.length > 0) {
                     topologicalOrdering = [];
                 }
             }
         };
 
-        dag.getLongestPathThroughVertex = function CalendarTiler_DirectedAcylicGraph_getLongestPathThroughVertex(vertex) {
+        dag.getLongestPathThroughVertex = function CalendarTiler_DirectedAcyclicGraph_getLongestPathThroughVertex(vertex) {
             var i,
                 longestPathLength = unsetIndexSentinel,
                 longestPathIndex = unsetIndexSentinel,
@@ -339,8 +339,8 @@
     timeRespectiveDagBuilder.build = function CalendarTiler_timeRespectiveDagBuilder_build(positions, appointments, alignments) {
         var i,
             dags = {
-                backward: new DirectedAcylicGraph(positions.length),
-                forward: new DirectedAcylicGraph(positions.length)
+                backward: new DirectedAcyclicGraph(positions.length),
+                forward: new DirectedAcyclicGraph(positions.length)
             };
 
         for (i = 0; i < positions.length; ++i) {
@@ -355,8 +355,8 @@
             j,
             column,
             dags = {
-                backward: new DirectedAcylicGraph(positions.length),
-                forward: new DirectedAcylicGraph(positions.length)
+                backward: new DirectedAcyclicGraph(positions.length),
+                forward: new DirectedAcyclicGraph(positions.length)
             };
 
         for (i = 0; i < columns.length; ++i) {
