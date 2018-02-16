@@ -14,6 +14,9 @@
         positionBuilder,
         columnBuilder,
         alignmentBuilder,
+        dagBuilders,
+        fillSpaceDagBuilder,
+        timeRespectiveDagBuilder,
         unsetIndexSentinel = -1,
         startSentinel = 0,
         xSentinel = 0,
@@ -94,181 +97,46 @@
             }
 
             return array;
-        },
-        timeRespectiveDagBuilder = {
-            addEdgeToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, toVertex) {
-                if (alignments.rFront[toVertex][0] === fromVertex) {
-                    dags.backward.addEdge(fromVertex, toVertex);
-                }
-
-                if (alignments.rBack[toVertex][alignments.rBack[toVertex].length - 1] === fromVertex) {
-                    dags.forward.addEdge(fromVertex, toVertex);
-                }
-            },
-            addEdgesToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgesToDirectedAcyclicGraphs(alignments, dags, fromVertex) {
-                var i;
-
-                if (alignments.rBack[fromVertex].length > 0) {
-                    dags.backward.addEdge(fromVertex, alignments.rBack[fromVertex][alignments.rBack[fromVertex].length - 1]);
-                }
-
-                if (alignments.rFront[fromVertex].length > 0) {
-                    dags.forward.addEdge(fromVertex, alignments.rFront[fromVertex][0]);
-                }
-
-                for (i = alignments.rBack.length - 1; i > fromVertex; --i) {
-                    timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
-                }
-
-                for (i = fromVertex - 1; i >= 0; --i) {
-                    timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
-                }
-            }
-        },
-        fillSpaceDagBuilder = {
-            requiresColumns: true,
-            doAppointmentsCollide: function CalendarTiler_fillSpaceDagBuilder_doAppointmentsCollide(appointmentA, appointmentB, inReverse) {
-                var earlierAppointment = inReverse ? appointmentB : appointmentA,
-                    laterAppointment = inReverse ? appointmentA : appointmentB;
-
-                if (!inReverse && laterAppointment.start >= earlierAppointment.end) {
-                    return undefined;
-                }
-
-                if (inReverse && earlierAppointment.start >= laterAppointment.end) {
-                    return undefined;
-                }
-
-                if (earlierAppointment.start === laterAppointment.start
-                        || earlierAppointment.end === laterAppointment.end
-                        || (earlierAppointment.start < laterAppointment.start && earlierAppointment.end > laterAppointment.start)
-                        || (earlierAppointment.start > laterAppointment.start && earlierAppointment.start < laterAppointment.end)) {
-                    return inReverse ? earlierAppointment.sortedIndex : laterAppointment.sortedIndex;
-                }
-
-                return -1;
-            },
-            collideAppointmentIntoColumn: function CalendarTiler_fillSpaceDagBuilder_collideAppointmentIntoColumn(column, appointment, inReverse) {
-                var i,
-                    collisionIndex,
-                    toVertices = [];
-
-                for (i = 0; i < column.length; ++i) {
-                    collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(appointment, column[i], inReverse);
-
-                    if (collisionIndex > -1) {
-                        toVertices.push(collisionIndex);
-                    } else if (isUndefined(collisionIndex)) {
-                        return toVertices.length > 0 ? toVertices : undefined;
-                    }
-                }
-
-                return toVertices.length > 0 ? toVertices : undefined;
-            },
-            getExtendedDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, columnIndex) {
-                var i,
-                    j,
-                    extendedToVertices,
-                    collisionIndex,
-                    toVertices = [];
-
-                for (i = columnIndex + 1; i < columns.length; ++i) {
-                    extendedToVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
-
-                    if (Array.isArray(extendedToVertices)) {
-                        if (extendedToVertices.length > 0) {
-                            for (j = 0; j < extendedToVertices.length; ++j) {
-                                collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(linchPinAppointment, appointments[extendedToVertices[j]]);
-
-                                if (!isUndefined(collisionIndex) && collisionIndex !== -1) {
-                                    return toVertices;
-                                } else {
-                                    toVertices.push(extendedToVertices[j]);
-                                }
-                            }
-                        }
-
-                        return toVertices;
-                    }
-                }
-
-                return toVertices;
-            },
-            getDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, columnIndex) {
-                var i,
-                    toVertices,
-                    linchPinAppointment,
-                    reducedColumnsLength = columns.length - 1;
-
-                for (i = columnIndex + 1; i < columns.length; ++i) {
-                    toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
-
-                    if (Array.isArray(toVertices)) {
-                        linchPinAppointment = appointments[toVertices[0]];
-
-                        if (i < reducedColumnsLength && toVertices.length > 0 && appointment.end > linchPinAppointment.start) {
-                            return toVertices.concat(fillSpaceDagBuilder.getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, i));
-                        }
-
-                        return toVertices;
-                    }
-                }
-
-                return [];
-            },
-            getDirectedAcyclicGraphBackwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphBackwardVertices(columns, appointment, columnIndex) {
-                var i,
-                    toVertices;
-
-                for (i = columnIndex - 1; i >= 0; --i) {
-                    toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment, true);
-
-                    if (Array.isArray(toVertices)) {
-                        return toVertices;
-                    }
-                }
-
-                return [];
-            },
-            addEdgesToDirectedAcyclicGraphs: function CalendarTiler_fillSpaceDagBuilder_addEdgesToDirectedAcyclicGraphs(dag, fromVertex, toVertices) {
-                var i;
-
-                for (i = 0; i < toVertices.length; ++i) {
-                    dag.addEdge(fromVertex, toVertices[i]);
-                }
-            }
-        },
-        dagBuilders = {
-            balanced: null,
-            timeRespective: timeRespectiveDagBuilder,
-            fillSpace: fillSpaceDagBuilder
         };
 
     function DirectedAcyclicGraph(numberOrVertices) {
         var dag = this,
             edges = fillArray(numberOrVertices),
             topologicalOrdering = [],
-            visitVertex = function CalendarTiler_DirectedAcyclicGraph_visitVertex(vertex,  visitedVertices) {
-                var i,
-                    edgeSet = edges[vertex];
-
-                visitedVertices[vertex] = true;
-
-                for (i = 0; i < edgeSet.length; ++i) {
-                    if (!visitedVertices[edgeSet[i]]) {
-                        visitVertex(edgeSet[i], visitedVertices);
-                    }
-                }
-
-                topologicalOrdering.push(vertex);
-            },
             topologicalSort = function CalendarTiler_DirectedAcyclicGraph_topologicalSort() {
                 var i,
+                    next,
+                    last,
+                    stack,
                     visitedVertices = fillArray(numberOrVertices, false);
 
                 for (i = 0; i < numberOrVertices; ++i) {
-                    if (visitedVertices[i] === false) {
-                        visitVertex(i, visitedVertices);
+                    if (!visitedVertices[i]) {
+                        stack = [{
+                            vertex: i,
+                            edgeIndex: 0
+                        }];
+
+                        while (stack.length > 0) {
+                            last = stack[stack.length - 1];
+                            next = edges[last.vertex][last.edgeIndex];
+
+                            if (visitedVertices[next]) {
+                                ++last.edgeIndex;
+                            } else if (isUndefined(next)) {
+                                if (!visitedVertices[last.vertex]) {
+                                    visitedVertices[last.vertex] = true;
+                                    topologicalOrdering.push(last.vertex);
+                                }
+
+                                stack.pop();
+                            } else {
+                                stack.push({
+                                    vertex: next,
+                                    edgeIndex: 0
+                                });
+                            }
+                        }
                     }
                 }
             },
@@ -344,39 +212,188 @@
         };
     }
 
-    timeRespectiveDagBuilder.build = function CalendarTiler_timeRespectiveDagBuilder_build(positions, appointments, alignments) {
-        var i,
-            dags = {
-                backward: new DirectedAcyclicGraph(positions.length),
-                forward: new DirectedAcyclicGraph(positions.length)
-            };
+    timeRespectiveDagBuilder = {
+        addEdgeToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, toVertex) {
+            if (alignments.rFront[toVertex][0] === fromVertex) {
+                dags.backward.addEdge(fromVertex, toVertex);
+            }
 
-        for (i = 0; i < positions.length; ++i) {
-            timeRespectiveDagBuilder.addEdgesToDirectedAcyclicGraphs(alignments, dags, i);
+            if (alignments.rBack[toVertex][alignments.rBack[toVertex].length - 1] === fromVertex) {
+                dags.forward.addEdge(fromVertex, toVertex);
+            }
+        },
+        addEdgesToDirectedAcyclicGraphs: function CalendarTiler_timeRespectiveDagBuilder_addEdgesToDirectedAcyclicGraphs(alignments, dags, fromVertex) {
+            var i;
+
+            if (alignments.rBack[fromVertex].length > 0) {
+                dags.backward.addEdge(fromVertex, alignments.rBack[fromVertex][alignments.rBack[fromVertex].length - 1]);
+            }
+
+            if (alignments.rFront[fromVertex].length > 0) {
+                dags.forward.addEdge(fromVertex, alignments.rFront[fromVertex][0]);
+            }
+
+            for (i = alignments.rBack.length - 1; i > fromVertex; --i) {
+                timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
+            }
+
+            for (i = fromVertex - 1; i >= 0; --i) {
+                timeRespectiveDagBuilder.addEdgeToDirectedAcyclicGraphs(alignments, dags, fromVertex, i);
+            }
+        },
+        build: function CalendarTiler_timeRespectiveDagBuilder_build(positions, appointments, alignments) {
+            var i,
+                dags = {
+                    backward: new DirectedAcyclicGraph(positions.length),
+                    forward: new DirectedAcyclicGraph(positions.length)
+                };
+
+            for (i = 0; i < positions.length; ++i) {
+                timeRespectiveDagBuilder.addEdgesToDirectedAcyclicGraphs(alignments, dags, i);
+            }
+
+            return dags;
         }
-
-        return dags;
     };
 
-    fillSpaceDagBuilder.build = function CalendarTiler_fillSpaceDagBuilder_build(positions, appointments, columns) {
-        var i,
-            j,
-            column,
-            dags = {
-                backward: new DirectedAcyclicGraph(positions.length),
-                forward: new DirectedAcyclicGraph(positions.length)
-            };
+    fillSpaceDagBuilder = {
+        requiresColumns: true,
+        doAppointmentsCollide: function CalendarTiler_fillSpaceDagBuilder_doAppointmentsCollide(appointmentA, appointmentB, inReverse) {
+            var earlierAppointment = inReverse ? appointmentB : appointmentA,
+                laterAppointment = inReverse ? appointmentA : appointmentB;
 
-        for (i = 0; i < columns.length; ++i) {
-            column = columns[i];
-
-            for (j = 0; j < column.length; ++j) {
-                fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.backward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphBackwardVertices(columns, column[j], i));
-                fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphForwardVertices(appointments, columns, column[j], i));
+            if (!inReverse && laterAppointment.start >= earlierAppointment.end) {
+                return undefined;
             }
-        }
 
-        return dags;
+            if (inReverse && earlierAppointment.start >= laterAppointment.end) {
+                return undefined;
+            }
+
+            if (earlierAppointment.start === laterAppointment.start
+                    || earlierAppointment.end === laterAppointment.end
+                    || (earlierAppointment.start < laterAppointment.start && earlierAppointment.end > laterAppointment.start)
+                    || (earlierAppointment.start > laterAppointment.start && earlierAppointment.start < laterAppointment.end)) {
+                return inReverse ? earlierAppointment.sortedIndex : laterAppointment.sortedIndex;
+            }
+
+            return -1;
+        },
+        collideAppointmentIntoColumn: function CalendarTiler_fillSpaceDagBuilder_collideAppointmentIntoColumn(column, appointment, inReverse) {
+            var i,
+                collisionIndex,
+                toVertices = [];
+
+            for (i = 0; i < column.length; ++i) {
+                collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(appointment, column[i], inReverse);
+
+                if (collisionIndex > -1) {
+                    toVertices.push(collisionIndex);
+                } else if (isUndefined(collisionIndex)) {
+                    return toVertices.length > 0 ? toVertices : undefined;
+                }
+            }
+
+            return toVertices.length > 0 ? toVertices : undefined;
+        },
+        getExtendedDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, columnIndex) {
+            var i,
+                j,
+                extendedToVertices,
+                collisionIndex,
+                toVertices = [];
+
+            for (i = columnIndex + 1; i < columns.length; ++i) {
+                extendedToVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
+
+                if (Array.isArray(extendedToVertices)) {
+                    if (extendedToVertices.length > 0) {
+                        for (j = 0; j < extendedToVertices.length; ++j) {
+                            collisionIndex = fillSpaceDagBuilder.doAppointmentsCollide(linchPinAppointment, appointments[extendedToVertices[j]]);
+
+                            if (!isUndefined(collisionIndex) && collisionIndex !== -1) {
+                                return toVertices;
+                            } else {
+                                toVertices.push(extendedToVertices[j]);
+                            }
+                        }
+                    }
+
+                    return toVertices;
+                }
+            }
+
+            return toVertices;
+        },
+        getDirectedAcyclicGraphForwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, columnIndex) {
+            var i,
+                toVertices,
+                linchPinAppointment,
+                reducedColumnsLength = columns.length - 1;
+
+            for (i = columnIndex + 1; i < columns.length; ++i) {
+                toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment);
+
+                if (Array.isArray(toVertices)) {
+                    linchPinAppointment = appointments[toVertices[0]];
+
+                    if (i < reducedColumnsLength && toVertices.length > 0 && appointment.end > linchPinAppointment.start) {
+                        return toVertices.concat(fillSpaceDagBuilder.getExtendedDirectedAcyclicGraphForwardVertices(appointments, columns, appointment, linchPinAppointment, i));
+                    }
+
+                    return toVertices;
+                }
+            }
+
+            return [];
+        },
+        getDirectedAcyclicGraphBackwardVertices: function CalendarTiler_fillSpaceDagBuilder_getDirectedAcyclicGraphBackwardVertices(columns, appointment, columnIndex) {
+            var i,
+                toVertices;
+
+            for (i = columnIndex - 1; i >= 0; --i) {
+                toVertices = fillSpaceDagBuilder.collideAppointmentIntoColumn(columns[i], appointment, true);
+
+                if (Array.isArray(toVertices)) {
+                    return toVertices;
+                }
+            }
+
+            return [];
+        },
+        addEdgesToDirectedAcyclicGraphs: function CalendarTiler_fillSpaceDagBuilder_addEdgesToDirectedAcyclicGraphs(dag, fromVertex, toVertices) {
+            var i;
+
+            for (i = 0; i < toVertices.length; ++i) {
+                dag.addEdge(fromVertex, toVertices[i]);
+            }
+        },
+        build: function CalendarTiler_fillSpaceDagBuilder_build(positions, appointments, columns) {
+            var i,
+                j,
+                column,
+                dags = {
+                    backward: new DirectedAcyclicGraph(positions.length),
+                    forward: new DirectedAcyclicGraph(positions.length)
+                };
+
+            for (i = 0; i < columns.length; ++i) {
+                column = columns[i];
+
+                for (j = 0; j < column.length; ++j) {
+                    fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.backward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphBackwardVertices(columns, column[j], i));
+                    fillSpaceDagBuilder.addEdgesToDirectedAcyclicGraphs(dags.forward, column[j].sortedIndex, fillSpaceDagBuilder.getDirectedAcyclicGraphForwardVertices(appointments, columns, column[j], i));
+                }
+            }
+
+            return dags;
+        }
+    };
+
+    dagBuilders = {
+        balanced: null,
+        timeRespective: timeRespectiveDagBuilder,
+        fillSpace: fillSpaceDagBuilder
     };
 
     alignmentBuilder = {
