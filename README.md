@@ -25,7 +25,7 @@ An algorithm for aesthetically displaying appointments/events on a calendar, imp
 At [work](https://www.pointmanhq.com/products/field-nimble) we needed a way to display the calendars of many users all at once and have the appointments/events/visits/what-have-you render in a clean and aesthetically pleasing way. So I designed what I thought was a good algorithm and then eventually realized there were several variations that could be made to give different visual flavors.
 
 # Usage #
-CalendarTiler is written in ES5 following the [Universal Module Definition (UMD)]((https://github.com/umdjs/umd)) so that it can be used in the browser or in Node.js without needing to do any extra work. All the code exists in a single file,
+CalendarTiler is written in ES5 following the [Universal Module Definition (UMD)](https://github.com/umdjs/umd) so that it can be used in the browser or in Node.js without needing to do any extra work. All the code exists in a single file,
 ```
 calendar-tiler/calendarTiler.js
 ```
