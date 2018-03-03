@@ -182,8 +182,8 @@ As previously noted, for each `a` in `A`, `positions[a].x` and `positions[a].dx`
 The idea being that each appointment `a` can then be placed on the 2-dimensional `(x, y)` plane with the following set of points corresponding to a box that represents each appointment `a` (from upper-left, upper-right, lower-right, lower-left) in clockwise fashion,
 ```
 {
-	(positions[a].x, positions[a].y),
-	(positions[a].x + positions[a].dx, positions[a].y),
+    (positions[a].x, positions[a].y),
+    (positions[a].x + positions[a].dx, positions[a].y),
     (positions[a].x + positions[a].dx, positions[a].y + positions[a].dy),
     (positions[a].x, positions[a].y + positions[a].dy)
 }
@@ -207,10 +207,10 @@ InitializePositions(A)
  1. SET positions = new Array<Object>[A.Length]
  2. FOR i = 1 TO A.Length
  3.     SET positions[i] = {
- 4.     	x: 0,
- 5.     	dx: 1,
- 6.     	y: A[i].start,
- 7.     	dy: A[i].end - A[i].start
+ 4.         x: 0,
+ 5.         dx: 1,
+ 6.         y: A[i].start,
+ 7.         dy: A[i].end - A[i].start
  8.     }
  9. ENDFOR
 10. RETURN positions
@@ -227,7 +227,7 @@ CalcuatePositionsForBalancedTilingMethod(positions, columns)
  1. SET columnsLength = columns.Length
  2. FOR i = 1 TO columns.Length
  3.     FOR j = 1 TO columns[i].Length
- 4.	        SET positions[i].x = i / columnsLength
+ 4.         SET positions[i].x = i / columnsLength
  5.         SET positions[i].dx = 1 / columnsLength
  6.     ENDFOR
  7. ENDFOR
@@ -246,14 +246,14 @@ GenerateLongestDagTraversals(positions, dags)
  3. SET longestDagTraversal = NULL
  4. SET traversalKey = NULL
  5. FOR i = 1 TO positions.Length
- 6. 	SET longestDagTraversal = dags.backward.GetLongestTraversalThroughVertex(i).Reverse()
- 7. 	longestDagTraversal.Add(i)
- 8. 	longestDagTraversal.AddRange(dags.forward.GetLongestTraversalThroughVertex(i))
- 9. 	SET traversalKey = longestDagTraversal.Join(',')
-10. 	IF traversalKeys.Find(traversalKey) != NULL
-11. 		traversalKeys.Add(traversalKey, TRUE)
-12. 		longestDagTraversals.Add(longestDagTraversal)
-13. 	ENDIF
+ 6.     SET longestDagTraversal = dags.backward.GetLongestTraversalThroughVertex(i).Reverse()
+ 7.     longestDagTraversal.Add(i)
+ 8.     longestDagTraversal.AddRange(dags.forward.GetLongestTraversalThroughVertex(i))
+ 9.     SET traversalKey = longestDagTraversal.Join(',')
+10.     IF traversalKeys.Find(traversalKey) != NULL
+11.         traversalKeys.Add(traversalKey, TRUE)
+12.         longestDagTraversals.Add(longestDagTraversal)
+13.     ENDIF
 14. ENDFOR
 15. RETURN longestDagTraversals.Sort(CompareDagTraversalLengths)
 
@@ -263,10 +263,10 @@ CompareDagTraversalLengths(dagTraversal1, dagTraversal2)
 List.Join(delineator)
  1. SET joined = new String
  2. FOR i = 1 TO THIS.Length
- 3. 	joined.Concatenate(THIS[i].ToString())
- 4. 	IF i < THIS.Length
- 5. 		joined.Concatenate(delineator)
- 6. 	ENDIF
+ 3.     joined.Concatenate(THIS[i].ToString())
+ 4.     IF i < THIS.Length
+ 5.         joined.Concatenate(delineator)
+ 6.     ENDIF
  7. ENDFOR
  8. RETURN joined
 ```
@@ -282,28 +282,28 @@ CalcuatePositionsUsingLongestDagTraversals(positions, longestDagTraversals)
  7.     FOR j = 1 TO traversal.Length
  8.         SET a = traversal[j]
  9.         IF j > 1
-10.         	SET beforeA = traversal[j - 1]
-11.         	SET x = positions[beforeA].x + positions[beforeA].dx
+10.             SET beforeA = traversal[j - 1]
+11.             SET x = positions[beforeA].x + positions[beforeA].dx
 12.         ELSE
-13.         	SET x = 0
+13.             SET x = 0
 14.         ENDIF
 15.         SET dx = CalculateBlockingDx(positions, traversal, j, x)
 16.         IF positions[a].x == 0
-17.         	SET positions[a].x = x
-18.         	IF dx != NULL
-19.         		SET positions[a].dx = dx
-20.         	ELSE
-21.         		SET positions[a].dx = CalculateNonBlockingDx(positions, traversal)
-22.         	ENDIF
+17.             SET positions[a].x = x
+18.             IF dx != NULL
+19.                 SET positions[a].dx = dx
+20.             ELSE
+21.                 SET positions[a].dx = CalculateNonBlockingDx(positions, traversal)
+22.             ENDIF
 23.         ENDIF
 24.     ENDFOR
 25. ENDFOR
 
 CalculateBlockingDx(positions, traversal, index, x)
  1. FOR i = index + 1 TO traversal.Length
- 2. 	IF positions[traversal[i]].x == 0
- 3.			RETURN positions[traversal[i]].x - x) / (i - index)
- 4. 	ENDIF
+ 2.     IF positions[traversal[i]].x == 0
+ 3.         RETURN positions[traversal[i]].x - x) / (i - index)
+ 4.     ENDIF
  5. ENDFOR
  6. RETURN NULL
 
@@ -311,14 +311,14 @@ CalculateNonBlockingDx(positions, traversal)
  1. SET unset = 0
  2. SET dx = 0
  3. FOR i = 0 TO traversal.Length
- 4. 	IF positions[traversal[i]].dx < 1
- 5. 		SET dx = dx + positions[traversal[i]].dx
- 6. 	ELSE
- 7. 		INCREMENT unset
- 8. 	ENDIF
+ 4.     IF positions[traversal[i]].dx < 1
+ 5.         SET dx = dx + positions[traversal[i]].dx
+ 6.     ELSE
+ 7.         INCREMENT unset
+ 8.     ENDIF
  9. ENDFOR
 10. IF unset == 0
-11. 	SET unset = 1
+11.     SET unset = 1
 12. ENDIF
 13. RETURN (1 - dx) / unset
 ```
@@ -340,7 +340,7 @@ ConstructColumns(A)
  7.         IF A[i].start >= column[column.Length].end
  8.             column[j].push(A[i])
  9.             column = NULL
-10.            BREAK
+10.             BREAK
 11.         ENDIF
 12.     ENDFOR
 13.     IF column != NULL
