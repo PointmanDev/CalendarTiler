@@ -596,17 +596,15 @@
             });
         },
         calculateBlockingDx: function CalendarTiler_positionBuilder_calculateBlockingDx(positions, path, index, x) {
-            var i,
-                blockingVertexIndex = unsetIndexSentinel;
+            var i;
 
             for (i = index + 1; i < path.length; ++i) {
                 if (positions[path[i]].x !== xSentinel) {
-                    blockingVertexIndex = i;
-                    break;
+                    return (positions[path[i]].x - x) / (i - index);
                 }
             }
 
-            return blockingVertexIndex > unsetIndexSentinel ? ((positions[path[blockingVertexIndex]].x - x) / (blockingVertexIndex - index)) : undefined;
+            return undefined;
         },
         calculateNonBlockingDx: function CalendarTiler_positionBuilder_calculateDx(positions, path) {
             var i,
