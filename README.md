@@ -204,7 +204,7 @@ This sorting simply means that appointments are sorted in ascending fashion by s
 Now initialize the `positions` array as follows,
 ```
 InitializePositions(A)
- 1. SET positions = new Array<Object>[A.Length]
+ 1. SET positions = new Array[A.Length]
  2. FOR i = 1 TO A.Length
  3.     SET positions[i] = {
  4.         x: 0,
@@ -241,8 +241,8 @@ The reason for needing two DAGs is simple, we need to find the longest chain of 
 Once the two DAGs are constructed, we build a Topological Ordering on the vertices in each DAG so that they can be easily traversed to find the longest path through `a` in each DAG for each `a` in `A`. Then we generate the distinct longest traversals as follows,
 ```
 GenerateLongestDagTraversals(positions, dags)
- 1. SET longestDagTraversals = new List<List<Integer>>
- 2. SET traversalKeys = new Map<String, Boolean>
+ 1. SET longestDagTraversals = new List
+ 2. SET traversalKeys = new Map
  3. SET longestDagTraversal = NULL
  4. SET traversalKey = NULL
  5. FOR i = 1 TO positions.Length
@@ -331,20 +331,20 @@ Thus we have computed `positions[a].x` and `positions[a].dx` for each `a` in `A`
 Building the columns is very straightforward, essentially we just try to keep pushing appointments to the foremost available column as follows,
 ```
 ConstructColumns(A)
- 1. SET columns = new List<List<Appointment>>
- 2. columns.Add(new List<Appointment>)
+ 1. SET columns = new List
+ 2. columns.Add(new List)
  3. columns[1].Add(A[1])
  4. FOR i = 1 TO A.Length
  5.     FOR j = 1 TO columns.Length
  6.         SET column = columns[j]
  7.         IF A[i].start >= column[column.Length].end
- 8.             column[j].push(A[i])
+ 8.             column[j].Add(A[i])
  9.             column = NULL
 10.             BREAK
 11.         ENDIF
 12.     ENDFOR
 13.     IF column != NULL
-14.         columns.Add(new List<Appointment>)
+14.         columns.Add(new List)
 15.         columns[columns.Length].Add(A[i])
 16.     ENDIF
 17. ENDFOR
