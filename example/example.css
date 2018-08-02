@@ -98,6 +98,8 @@ div::-webkit-scrollbar {
     z-index: 5;
     box-sizing: border-box;
     text-align: center;
+    overflow-wrap: break-word;
+    overflow: hidden;
 }
 
 .example-times-scroll-spacer {

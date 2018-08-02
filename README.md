@@ -191,31 +191,41 @@ The idea being that each appointment `a` can then be placed on the 2-dimensional
 So how do we go about producing `positions`? Since `positions[a].y` and `positions[a].dy` are already given (or easily computed using the `a.start` and `a.end` we only need to find `positions[a].x` and `positions[a].dx` for each `a` in `A`.
 
 # Algorithm Overview #
-Regardless of the selected tiling method (balanced, fill space or time respective), the first step is always the same.
+**NOTE**:  We'll also assume that for each appointment `a`, `a.end` is using absolute units (as opposed to duration units).
 
-Sort `A` (using your favorite comparison sort) by the following rule,
-```
-a <= b IFF a.start < b.start OR (a.start == b.start AND a.end >= b.end)
-```
-This sorting simply means that appointments are sorted in ascending fashion by start time and then in descending fashion by end time/duration should they have equal start times.
-
-**NOTE**: From now on we'll assume that `A` is sorted as above. We'll also assume that `a.end` is using absolute units (as opposed to duration units).
-
-Now initialize the `positions` array as follows,
+Regardless of the selected tiling method (balanced, fill space or time respective), the first step is always the same, the appointments are sorted in ascending fashion by start time and then in descending fashion by end time/duration should they have equal start times. After the sorting occurs we initialize the `positions` array as follows,
 ```
 InitializePositions(A)
+ IN: A - An array of appointments each with a start and an end property,
+ 	     which are decimal numbers such that, start < end.
+ OUT: postions - An array (with the same length as A) of 4-tuples, (x, dx, y, dy).
+ 				 Each of x, dx, y and dy are decimal numbers where,
+                 0 <= x < 1 and 0 < dx <= 1
  1. SET positions = new Array[A.Length]
- 2. FOR i = 1 TO A.Length
- 3.     SET positions[i] = {
- 4.         x: 0,
- 5.         dx: 1,
- 6.         y: A[i].start,
- 7.         dy: A[i].end - A[i].start
- 8.     }
- 9. ENDFOR
-10. RETURN positions
+ 2. SET A = CALL A.Sort(CompareAppointments)
+ 3. FOR i = 1 TO A.Length DO
+ 4.     SET positions[i] = {
+ 5.         x: 0,
+ 6.         dx: 1,
+ 7.         y: A[i].start,
+ 8.         dy: A[i].end - A[i].start
+ 9.     }
+10. ENDFOR
+11. RETURN positions
+
+CompareAppointments(appointment1, appointment2)
+ IN: appointment1, appointment2 - Appointments with start and end properties where,
+ 	 							  start and end are decimal numbers such that start < end.
+ OUT: isLessThan - A boolean value which is TRUE if appointment1 <= appointment2 and FALSE otherwise.
+ 1. SET isLessThan = FALSE
+ 2. IF appointment1.start < appointment2.start THEN
+ 3. 	isLessThan = TRUE
+ 4. ELSE IF appointment1.start == appointment2.start AND appointment1.end >= appointment2.end THEN
+ 5. 	isLessThan = TRUE
+ 6. ENDIF
+ 7. RETURN isLessThan
 ```
-After the sorting step, we move onto one of 3 subroutines each corresponding to one of the 3 different tiling method.
+After the initialization step, we move onto one of 3 subroutines each corresponding to one of the 3 different tiling method.
 
 The balanced and fill space tiling methods both begin the same way. We generate an array of columns, each column is an array of appointments which are stacked on top of each other, with new columns being generated when an appointment cannot be stacked in a previous column without a collision between another appointment in that column. Details for the procedure to construct said columns can be found here [Building Columns](#building-columns).
 
@@ -224,8 +234,9 @@ The time respective method generates what can best be described as alignments as
 In the case of the balanced method the `x` and `dx` values are easily computed using the columns by proceeding as follows,
 ```
 CalcuatePositionsForBalancedTilingMethod(positions, columns)
+
  1. SET columnsLength = columns.Length
- 2. FOR i = 1 TO columns.Length
+ 2. FOR i = 1 TO columns.Length DO
  3.     FOR j = 1 TO columns[i].Length
  4.         SET positions[i].x = i / columnsLength
  5.         SET positions[i].dx = 1 / columnsLength
