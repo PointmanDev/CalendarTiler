@@ -2,7 +2,7 @@
   "name": "calendar-tiler",
   "version": "1.0.2",
   "description": "Algorithm for tiling a calendar filled with appointments",
-  "main": "index.js",
+  "main": "calendarTiler.js",
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
